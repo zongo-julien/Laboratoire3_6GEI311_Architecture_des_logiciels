@@ -39,5 +39,10 @@ class ElementDescription(ABC):
 
     @property
     @abstractmethod
+    def typeArtefact(self) -> str:
+        """Type d'artefact : "texte", "image" ou "video", comme dans FabriqueDescription.creer()."""
+
+    @property
+    @abstractmethod
     def resume(self) -> str:
         """Résumé lisible de l'élément."""
