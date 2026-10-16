@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from acteurs.user import User
 from modele.enums import Priorite
-from modele.exceptions import SessionIndisponibleException
+from modele.exceptions import AccesRefuseException, SessionIndisponibleException
 from modele.systeme_tickets import SystemeTickets
 from modele.ticket import Ticket
 from sessions.lot_admin import LotAdmin
 
 if TYPE_CHECKING:
     from modele.enums import Statut
+    from sessions.session_creation import SessionCreation
     from sessions.session_edition import SessionEdition
+
+dossierRessources = Path(__file__).resolve().parent.parent / "ressources"
 
 
 def instantane(ticket: Ticket) -> tuple[Statut, str | None, int, int]:
@@ -82,3 +86,72 @@ class TestAbandonSession(unittest.TestCase):
 
     def testLotAdminSansAbandonner(self) -> None:
         self.assertFalse(hasattr(LotAdmin, "abandonner"))
+
+
+class TestSessionCreation(unittest.TestCase):
+    """Le ticket n'entre dans le dépôt qu'à l'application de la session de création."""
+
+    def setUp(self) -> None:
+        self._systeme: SystemeTickets = SystemeTickets()
+        self._createur: User = User(1, "Abdoul Razack", "abdoul.razack@uqac.ca", self._systeme)
+        self._ticket: Ticket = Ticket(10, "Nouveau ticket", Priorite.MOYENNE)
+        self._session: SessionCreation = self._createur.ouvrirSessionCreation(self._ticket)
+
+    def testTicketAbsentAvantAppliquer(self) -> None:
+        self._session.ajouterCommentaire("Premier commentaire")
+        self._session.ajouterTexteSaisi("Description saisie du problème.")
+        self.assertEqual(self._session.libelle, "Session de création")
+        self.assertFalse(self._systeme.contient(self._ticket))
+        self.assertIsNone(self._ticket.creator)
+
+    def testTicketPresentApresAppliquer(self) -> None:
+        self._session.ajouterCommentaire("Premier commentaire")
+        self._session.ajouterTexteSaisi("Description saisie du problème.")
+        self._session.ajouterElement("image", str(dossierRessources / "capture_ecran.png"))
+        rapport = self._session.appliquer()
+        self.assertEqual((rapport.nombreSucces, rapport.nombreRefus), (3, 0))
+        self.assertTrue(self._systeme.contient(self._ticket))
+        self.assertIs(self._ticket.creator, self._createur)
+        self.assertEqual(len(self._ticket.comments), 1)
+        self.assertEqual(self._ticket.description.nombreElements, 2)
+        self.assertEqual(self._createur.mesTickets(), [self._ticket])
+
+    def testAppliquerEnPauseRefuse(self) -> None:
+        self._session.ajouterTexteSaisi("Description saisie du problème.")
+        self._session.mettreEnPause()
+        with self.assertRaises(SessionIndisponibleException) as contexte:
+            self._session.appliquer()
+        self.assertEqual(
+            str(contexte.exception), "Session de création en pause : application impossible"
+        )
+        self.assertFalse(self._systeme.contient(self._ticket))
+        self.assertIsNone(self._ticket.creator)
+
+    def testAppliquerEnDoubleRefuse(self) -> None:
+        self._session.appliquer()
+        with self.assertRaises(SessionIndisponibleException):
+            self._session.appliquer()
+        self.assertEqual(self._systeme.tickets, [self._ticket])
+
+    def testAbandonTicketJamaisDansLeDepot(self) -> None:
+        self._session.ajouterTexteSaisi("Description saisie du problème.")
+        self._session.abandonner()
+        self.assertFalse(self._systeme.contient(self._ticket))
+        self.assertIsNone(self._ticket.creator)
+        with self.assertRaises(SessionIndisponibleException):
+            self._session.appliquer()
+        self.assertFalse(self._systeme.contient(self._ticket))
+        self.assertIsNone(self._ticket.creator)
+
+    def testOuvrirSessionCreationSurTicketExistantRefusee(self) -> None:
+        dejaCree = Ticket(20, "Ticket déjà créé", Priorite.BASSE)
+        self._createur.createTicket(dejaCree)
+        creePuisSupprime = Ticket(21, "Ticket créé puis supprimé", Priorite.BASSE)
+        self._createur.createTicket(creePuisSupprime)
+        self._createur.supprimerTicket(creePuisSupprime)
+        deposeSansCreateur = Ticket(22, "Ticket déposé sans créateur", Priorite.BASSE)
+        self._systeme.ajouterTicket(deposeSansCreateur)
+        for ticket in (dejaCree, creePuisSupprime, deposeSansCreateur):
+            with self.subTest(ticket=ticket.title):
+                with self.assertRaises(AccesRefuseException):
+                    self._createur.ouvrirSessionCreation(ticket)
