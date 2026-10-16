@@ -282,7 +282,7 @@ commandes/                  Commande et les six commandes concrètes
 sessions/                   SessionOperations, SessionEdition, SessionCreation, LotAdmin, RapportExecution
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 docs/                       diagrammes UML et captures d'écran du README
-tests/                      test de non-régression de main.py et sa sortie de référence
+tests/                      tests unitaires et test de non-régression de main.py
 ```
 
 ### Conventions de code
