@@ -41,6 +41,12 @@ class SessionEdition(SessionOperations):
         element.traiter()
         self._ajouter(CommandeAjouterElement(self._ticket, element))
 
+    def ajouterTexteSaisi(self, texte: str) -> None:
+        element = FabriqueDescription.creerSaisie(texte)
+        # Traitement immédiat : un texte vide est refusé dès l'ajout.
+        element.traiter()
+        self._ajouter(CommandeAjouterElement(self._ticket, element))
+
     def annulerDerniere(self) -> str:
         """Retire la dernière modification en attente et retourne son libellé."""
         if self._appliquee:

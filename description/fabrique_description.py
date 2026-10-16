@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from description.description_image import DescriptionImage
 from description.description_texte import DescriptionTexte
+from description.description_texte_saisi import DescriptionTexteSaisi
 from description.description_video import DescriptionVideo
 from modele.exceptions import ArtefactInvalideException
 
@@ -27,3 +28,8 @@ class FabriqueDescription:
             f"Type d'artefact inconnu : '{type_artefact}'. "
             "Types acceptés : texte, image, video"
         )
+
+    @staticmethod
+    def creerSaisie(texte: str) -> ElementDescription:
+        """Crée un élément à partir d'un texte tapé, sans le charger."""
+        return DescriptionTexteSaisi(texte)
