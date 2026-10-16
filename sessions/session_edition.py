@@ -23,6 +23,7 @@ class SessionEdition(SessionOperations):
         super().__init__(proprietaire, systeme)
         self._ticket: Ticket = ticket
         self._enPause: bool = False
+        self._abandonnee: bool = False
 
     @property
     def libelle(self) -> str:
@@ -31,6 +32,11 @@ class SessionEdition(SessionOperations):
     @property
     def estEnPause(self) -> bool:
         return self._enPause
+
+    @property
+    def estOuverte(self) -> bool:
+        """Vraie tant que la session n'est ni appliquée ni abandonnée."""
+        return not self._appliquee and not self._abandonnee
 
     def ajouterCommentaire(self, texte: str) -> None:
         self._ajouter(CommandeAjouterCommentaire(self._ticket, texte, self._proprietaire))
@@ -49,6 +55,7 @@ class SessionEdition(SessionOperations):
 
     def annulerDerniere(self) -> str:
         """Retire la dernière modification en attente et retourne son libellé."""
+        self._refuserSiAbandonnee("annulation")
         if self._appliquee:
             raise SessionIndisponibleException(
                 f"{self.libelle} : application déjà effectuée, annulation impossible"
@@ -64,6 +71,7 @@ class SessionEdition(SessionOperations):
         return self._commandes.pop().libelle
 
     def mettreEnPause(self) -> None:
+        self._refuserSiAbandonnee("mise en pause")
         if self._enPause:
             raise SessionIndisponibleException(f"{self.libelle} déjà en pause")
         if self._appliquee:
@@ -73,14 +81,35 @@ class SessionEdition(SessionOperations):
         self._enPause = True
 
     def reprendre(self) -> None:
+        self._refuserSiAbandonnee("reprise")
         if not self._enPause:
             raise SessionIndisponibleException(
                 f"{self.libelle} non en pause : reprise impossible"
             )
         self._enPause = False
 
+    def abandonner(self) -> None:
+        """Renonce à toute la session avant application : le ticket reste inchangé."""
+        if self._appliquee:
+            raise SessionIndisponibleException(
+                f"{self.libelle} : application déjà effectuée, abandon impossible"
+            )
+        if self._abandonnee:
+            raise SessionIndisponibleException(f"{self.libelle} déjà abandonnée")
+        # Permis même en pause : la pile est vidée et la pause levée.
+        self._commandes.clear()
+        self._enPause = False
+        self._abandonnee = True
+
+    def _refuserSiAbandonnee(self, operation: str) -> None:
+        if self._abandonnee:
+            raise SessionIndisponibleException(
+                f"{self.libelle} abandonnée : {operation} impossible"
+            )
+
     def _verifierAjout(self, commande: Commande) -> None:
         super()._verifierAjout(commande)
+        self._refuserSiAbandonnee("ajout")
         if self._enPause:
             raise SessionIndisponibleException(f"{self.libelle} en pause : ajout impossible")
         if commande.cible is not self._ticket:
@@ -90,6 +119,7 @@ class SessionEdition(SessionOperations):
             )
 
     def appliquer(self) -> RapportExecution:
+        self._refuserSiAbandonnee("application")
         if self._enPause:
             raise SessionIndisponibleException(
                 f"{self.libelle} en pause : application impossible"
