@@ -125,8 +125,10 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `User` | `createTicket(ticket)` | L'utilisateur devient le créateur du ticket |
 | `User` | `supprimerTicket(ticket)` | Seulement par le créateur, et si le ticket n'a jamais été assigné |
 | `User` | `soumettreValidation(ticket)` | Seulement par l'assigné : `ASSIGNE` → `VALIDATION` |
-| `User` | `ouvrirSessionEdition(ticket)` | Seulement par le créateur ; retourne une `SessionEdition` |
-| `User` | `ouvrirSessionCreation(ticket)` | Seulement pour un ticket sans créateur et absent du dépôt ; retourne une `SessionCreation` |
+| `User` | `ouvrirSessionEdition(ticket)` | Seulement par le créateur, et une seule session ouverte par ticket ; retourne une `SessionEdition` |
+| `User` | `ouvrirSessionCreation(ticket)` | Seulement pour un ticket sans créateur et absent du dépôt, et une seule session ouverte par ticket ; retourne une `SessionCreation` |
+| `User` | `sessionEnCours(ticket)` | Session d'édition ou de création encore ouverte sur ce ticket, même en pause ; sinon `None` |
+| `User` | `sessionsOuvertes` | Propriété en lecture seule : sessions d'édition et de création encore ouvertes |
 | `User` | `mesTickets(ids=None)` | Tickets créés par l'utilisateur, filtrables par identifiant |
 | `Admin` | `assignTicket(ticket, user)` | Assignation, réassignation ou rejet d'une validation |
 | `Admin` | `desassignerTicket(ticket)` | `ASSIGNE` → `OUVERT` |
@@ -171,6 +173,7 @@ Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les se
 | Consultation : `mesTickets()` avec ou sans filtre, `viewTicket()`, `viewAllTickets()` | User, Admin | B, C, G, Q |
 | Session d'édition : modifications en attente, annulation, pause et reprise, application groupée avec rapport | User | D, E, F, G, H |
 | Session de création : le ticket n'entre dans le dépôt qu'à l'application de sa description | User | — (tests unitaires) |
+| Une seule session ouverte par ticket, de nouveau permise après application ou abandon | User | — (tests unitaires) |
 | Description multimédia (texte, image, vidéo) avec chargement différé de la vidéo | User | D, G |
 | Cycle de vie contrôlé par une machine à états | Admin, User | J, K, O |
 | Réassignation directe et rejet d'une validation | Admin | L |

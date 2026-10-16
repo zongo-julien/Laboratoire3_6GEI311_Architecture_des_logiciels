@@ -155,3 +155,68 @@ class TestSessionCreation(unittest.TestCase):
             with self.subTest(ticket=ticket.title):
                 with self.assertRaises(AccesRefuseException):
                     self._createur.ouvrirSessionCreation(ticket)
+
+
+class TestUneSessionParTicket(unittest.TestCase):
+    """Un utilisateur n'a qu'une session ouverte à la fois sur un même ticket."""
+
+    def setUp(self) -> None:
+        self._systeme: SystemeTickets = SystemeTickets()
+        self._createur: User = User(1, "Abdoul Razack", "abdoul.razack@uqac.ca", self._systeme)
+        self._ticket: Ticket = Ticket(1, "Bug de connexion", Priorite.HAUTE)
+        self._createur.createTicket(self._ticket)
+
+    def testSecondeSessionRefusee(self) -> None:
+        premiere = self._createur.ouvrirSessionEdition(self._ticket)
+        with self.assertRaises(SessionIndisponibleException):
+            self._createur.ouvrirSessionEdition(self._ticket)
+        self.assertIs(self._createur.sessionEnCours(self._ticket), premiere)
+
+    def testSecondeCreationRefusee(self) -> None:
+        nouveau = Ticket(2, "Nouveau ticket", Priorite.BASSE)
+        premiere = self._createur.ouvrirSessionCreation(nouveau)
+        with self.assertRaises(SessionIndisponibleException):
+            self._createur.ouvrirSessionCreation(nouveau)
+        self.assertIs(self._createur.sessionEnCours(nouveau), premiere)
+
+    def testNouvelleSessionApresAbandon(self) -> None:
+        premiere = self._createur.ouvrirSessionEdition(self._ticket)
+        premiere.abandonner()
+        self.assertIsNone(self._createur.sessionEnCours(self._ticket))
+        seconde = self._createur.ouvrirSessionEdition(self._ticket)
+        self.assertIsNot(seconde, premiere)
+        self.assertIs(self._createur.sessionEnCours(self._ticket), seconde)
+
+    def testNouvelleSessionApresAppliquer(self) -> None:
+        premiere = self._createur.ouvrirSessionEdition(self._ticket)
+        premiere.ajouterCommentaire("Commentaire appliqué")
+        premiere.appliquer()
+        self.assertIsNone(self._createur.sessionEnCours(self._ticket))
+        seconde = self._createur.ouvrirSessionEdition(self._ticket)
+        self.assertIs(self._createur.sessionEnCours(self._ticket), seconde)
+
+    def testSessionEnPauseRetournee(self) -> None:
+        session = self._createur.ouvrirSessionEdition(self._ticket)
+        session.mettreEnPause()
+        self.assertIs(self._createur.sessionEnCours(self._ticket), session)
+        with self.assertRaises(SessionIndisponibleException):
+            self._createur.ouvrirSessionEdition(self._ticket)
+
+    def testSessionEnCoursSansSession(self) -> None:
+        self.assertIsNone(self._createur.sessionEnCours(self._ticket))
+
+    def testCreateurVerifieAvantSessionOuverte(self) -> None:
+        self._createur.ouvrirSessionEdition(self._ticket)
+        autre = User(2, "T Julien", "t.julien@uqac.ca", self._systeme)
+        with self.assertRaises(AccesRefuseException):
+            autre.ouvrirSessionEdition(self._ticket)
+
+    def testSessionsOuvertesCompteCreationsEtEditions(self) -> None:
+        self.assertEqual(self._createur.sessionsOuvertes, [])
+        edition = self._createur.ouvrirSessionEdition(self._ticket)
+        creation = self._createur.ouvrirSessionCreation(Ticket(2, "Nouveau ticket", Priorite.BASSE))
+        self.assertEqual(self._createur.sessionsOuvertes, [edition, creation])
+        creation.abandonner()
+        self.assertEqual(self._createur.sessionsOuvertes, [edition])
+        edition.appliquer()
+        self.assertEqual(self._createur.sessionsOuvertes, [])
