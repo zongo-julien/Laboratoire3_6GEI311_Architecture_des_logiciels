@@ -47,6 +47,16 @@ python main.py
 
 Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
 
+### Lancer les tests
+
+Depuis la racine du dépôt :
+
+```bash
+python -m unittest discover -s tests -t .
+```
+
+Le test de non-régression exécute `main.py` et compare sa sortie, dates neutralisées, à `tests/reference_main.txt`. Si la sortie change volontairement, régénérer la référence avec `python tests/test_non_regression.py`.
+
 ### Utiliser le système dans son propre code
 
 Tous les acteurs partagent un même dépôt, `SystemeTickets`, injecté dans leur constructeur :
@@ -258,6 +268,7 @@ commandes/                  Commande et les six commandes concrètes
 sessions/                   SessionOperations, SessionEdition, LotAdmin, RapportExecution
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 docs/                       diagrammes UML et captures d'écran du README
+tests/                      test de non-régression de main.py et sa sortie de référence
 ```
 
 ### Conventions de code
