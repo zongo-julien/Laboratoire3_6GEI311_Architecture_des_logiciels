@@ -142,6 +142,7 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `SessionEdition` | `annulerDerniere()`, `mettreEnPause()`, `reprendre()` | Gestion de la pile de modifications |
 | `SessionEdition` | `abandonner()` | Renonce à toute la session avant application : vide la pile, lève la pause et ferme la session ; permise en pause, refusée si la session est déjà appliquée ou abandonnée |
 | `SessionEdition` | `estOuverte` | Propriété en lecture seule : vraie tant que la session n'est ni appliquée ni abandonnée |
+| `SessionEdition` | `ticket` | Propriété en lecture seule : ticket visé par la session (aussi pour `SessionCreation`) |
 | `SessionCreation` | mêmes opérations que `SessionEdition` | `appliquer()` vérifie d'abord la session (déjà appliquée, abandonnée, en pause), puis crée le ticket avec `createTicket()` et applique sa description ; un refus ou un abandon laisse le ticket hors du dépôt |
 | `LotAdmin` | `assigner(ticket, user)`, `desassigner(ticket)`, `validerTicket(ticket)`, `fermer(ticket)` | Prépare une opération ; ni pause, ni reprise, ni annulation |
 | `SessionEdition`, `LotAdmin` | `appliquer()` | Exécute les modifications en attente et retourne un `RapportExecution` |

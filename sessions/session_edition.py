@@ -38,6 +38,11 @@ class SessionEdition(SessionOperations):
         """Vraie tant que la session n'est ni appliquée ni abandonnée."""
         return not self._appliquee and not self._abandonnee
 
+    @property
+    def ticket(self) -> Ticket:
+        """Ticket visé par la session (aussi pour SessionCreation)."""
+        return self._ticket
+
     def ajouterCommentaire(self, texte: str) -> None:
         self._ajouter(CommandeAjouterCommentaire(self._ticket, texte, self._proprietaire))
 
