@@ -11,5 +11,14 @@ class DescriptionTexte(ElementDescription):
             self._contenu: str = fichier.read()
 
     @property
+    def typeArtefact(self) -> str:
+        return "texte"
+
+    @property
+    def contenu(self) -> str:
+        """Texte chargé, disponible après traiter()."""
+        return self._contenu
+
+    @property
     def resume(self) -> str:
         return f"[Texte] {self._nom} ({len(self._contenu)} caractères)"

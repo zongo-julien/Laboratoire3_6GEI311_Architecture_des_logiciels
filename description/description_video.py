@@ -23,6 +23,10 @@ class DescriptionVideo(ElementDescription):
         return self._contenu is not None
 
     @property
+    def typeArtefact(self) -> str:
+        return "video"
+
+    @property
     def resume(self) -> str:
         charge = "oui" if self.estCharge else "non"
         return f"[Vidéo] {self._nom} ({self._taille} octets, contenu chargé : {charge})"

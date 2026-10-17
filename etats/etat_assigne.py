@@ -16,6 +16,10 @@ class EtatAssigne(EtatTicket):
     def nom(self) -> Statut:
         return Statut.ASSIGNE
 
+    @property
+    def transitionsPermises(self) -> frozenset[Statut]:
+        return frozenset({Statut.ASSIGNE, Statut.OUVERT, Statut.VALIDATION, Statut.FERME})
+
     def gererTransition(self, ticket: Ticket, nouveau_statut: Statut) -> None:
         """Transitions autorisées : ASSIGNE, OUVERT, VALIDATION, FERME."""
         # Imports locaux : les états se référencent mutuellement.

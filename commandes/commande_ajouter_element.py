@@ -21,4 +21,5 @@ class CommandeAjouterElement(Commande):
         return f"Ajouter l'élément {self._element.resume} au ticket #{self.cible.ticketID}"
 
     def executer(self) -> None:
-        self.cible.description.ajouterElement(self._element)
+        # Passe par le ticket pour que l'ajout soit notifié aux observateurs.
+        self.cible.ajouterElementDescription(self._element)
