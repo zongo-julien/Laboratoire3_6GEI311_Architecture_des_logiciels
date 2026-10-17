@@ -147,8 +147,34 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `SessionEdition`, `LotAdmin` | `appliquer()` | Exécute les modifications en attente et retourne un `RapportExecution` |
 | `ElementDescription` | `typeArtefact` | Propriété en lecture seule : `"texte"`, `"image"` ou `"video"`, les mêmes valeurs que `FabriqueDescription.creer()` |
 | `DescriptionTexte` | `contenu` | Propriété en lecture seule : texte du fichier, disponible après `traiter()` |
+| `SystemeTickets` | `ticketsAssignesA(user)` | Tickets dont `user` est l'assigné actuel, y compris ceux à l'état `TERMINE` ou `FERME`, où l'assigné est conservé |
+| `SystemeTickets` | `inscrireUtilisateur(utilisateur)`, `utilisateurs`, `utilisateurParId(id)` | Annuaire des utilisateurs, utilisé par la sauvegarde ; l'inscription est idempotente, et un identifiant déjà pris par un autre utilisateur lève `ValueError` |
+| `Ticket` | `transitionsPermises` | Propriété en lecture seule : statuts accessibles depuis l'état courant |
+| `Ticket` | `transitionPossible(statut)` | Indique si la transition serait acceptée, sans rien modifier |
+| `Ticket` | `ajouterElementDescription(element)` | Ajoute un élément à la description, met à jour la date et notifie les observateurs |
+| `Ticket`, `SystemeTickets` | `abonner(observateur)`, `desabonner(observateur)` | Abonne ou désabonne un `ObservateurTickets` ; s'abonner deux fois n'a pas d'effet, et se désabonner sans être abonné ne lève pas d'erreur |
+| `DepotJSON` | `sauvegarder(systeme)`, `charger()`, `existe()` | Écrit tout le système dans un fichier JSON, ou le reconstruit ; voir [Sauvegarder et recharger le système](#sauvegarder-et-recharger-le-système) |
 
 L'Admin ne crée, ne supprime ni n'édite aucun ticket. Chacune de ses opérations demande **la transition d'abord, la donnée ensuite** : un refus ne modifie jamais le ticket.
+
+### Sauvegarder et recharger le système
+
+`DepotJSON` enregistre tout le système (utilisateurs, tickets, commentaires et descriptions) dans un fichier JSON, puis le reconstruit :
+
+```python
+from persistance.depot_json import DepotJSON
+
+depot = DepotJSON("sauvegarde.json")
+depot.sauvegarder(systeme)
+systeme = depot.charger()
+```
+
+- Les utilisateurs sauvegardés sont ceux de l'annuaire (`inscrireUtilisateur()`) et ceux qui sont cités dans les tickets ; dans un ticket, chaque utilisateur est remplacé par son identifiant.
+- Les fichiers de description sont sauvegardés par leur chemin, sans être copiés ; un texte saisi est sauvegardé avec son contenu.
+- L'écriture passe par un fichier temporaire : une sauvegarde interrompue ne remplace pas l'ancienne.
+- Au chargement, `Ticket.restaurer()` remet chaque ticket dans l'état sauvegardé, dates comprises, sans rejouer la machine à états ; `FabriqueEtat` construit l'état qui correspond au statut enregistré.
+- Un fichier de description introuvable est ignoré et signalé dans `depot.avertissements`. Un fichier de sauvegarde illisible, d'une autre version ou incohérent lève `PersistanceException` ; un fichier absent lève `FileNotFoundError` (voir `depot.existe()`).
+- Les sessions non appliquées ne sont pas sauvegardées.
 
 ## Résultats
 
@@ -174,6 +200,10 @@ Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les se
 | Session d'édition : modifications en attente, annulation, pause et reprise, application groupée avec rapport | User | D, E, F, G, H |
 | Session de création : le ticket n'entre dans le dépôt qu'à l'application de sa description | User | — (tests unitaires) |
 | Une seule session ouverte par ticket, de nouveau permise après application ou abandon | User | — (tests unitaires) |
+| Consultation des tickets assignés à un utilisateur | User | — (tests unitaires) |
+| Transitions permises consultables sans modifier le ticket | — | — (tests unitaires) |
+| Notification des observateurs à chaque modification d'un ticket, relayée par le dépôt | — | — (tests unitaires) |
+| Sauvegarde et rechargement du système en JSON | — | — (tests unitaires) |
 | Description multimédia (texte, image, vidéo) avec chargement différé de la vidéo | User | D, G |
 | Cycle de vie contrôlé par une machine à états | Admin, User | J, K, O |
 | Réassignation directe et rejet d'une validation | Admin | L |
@@ -197,13 +227,17 @@ Le statut d'un ticket n'est pas stocké : la propriété `status` (en lecture se
 | `TERMINE` | aucune (état terminal) |
 | `FERME` | aucune (état terminal) |
 
+Chaque état déclare aussi les statuts qu'il accepte dans `transitionsPermises`. `Ticket.transitionPossible(statut)` permet ainsi de savoir si une transition serait acceptée sans la tenter et sans recopier les règles ailleurs. Comme ces règles sont écrites à deux endroits (`transitionsPermises` les annonce, `gererTransition()` les applique), un test essaie chaque état avec chaque statut et vérifie que les deux disent la même chose.
+
 #### Template Method — `description/element_description.py`
 
 `ElementDescription.traiter()` (marquée `@typing.final`) fixe l'ordre des étapes : `validerChemin()` → `charger()` → `preparerAffichage()`. `charger()` varie selon le type d'artefact (texte, image, vidéo) ; faute de fichier, `DescriptionTexteSaisi` (texte tapé par l'utilisateur) redéfinit aussi `validerChemin()`, qui refuse un texte vide, et `preparerAffichage()`, qui affiche le nom « texte saisi ». `DescriptionVideo` pratique le **chargement différé** : `charger()` ne lit que la taille du fichier, et le contenu n'est lu que par `chargerContenuReel()`.
 
-#### Factory Method — `description/fabrique_description.py`
+#### Factory Method — `description/fabrique_description.py`, `etats/fabrique_etat.py`
 
 `FabriqueDescription.creer(type_artefact, chemin)` crée l'élément voulu (`"texte"`, `"image"`, `"video"`) sans le charger ; tout autre type lève `ArtefactInvalideException`. `FabriqueDescription.creerSaisie(texte)` crée de même, sans le charger, un élément à partir d'un texte tapé par l'utilisateur, sans fichier. La fabrique est le seul endroit du programme qui connaît les sous-classes concrètes.
+
+`FabriqueEtat.creer(statut)` joue le même rôle pour les états : au chargement d'une sauvegarde, elle construit l'état qui correspond au statut enregistré. Un test vérifie que chaque valeur de `Statut` a son état.
 
 #### Command — `commandes/`, `sessions/`
 
@@ -214,6 +248,15 @@ Les modifications sont empilées sous forme de commandes dans une session, puis 
 - `LotAdmin` (côté Admin) : assigner, désassigner, valider, fermer ; ni pause, ni reprise, ni annulation.
 
 Dans une session d'édition, `annulerDerniere()` défait seulement la dernière modification en attente (undo), alors que `abandonner()` renonce à toute la session : la pile est vidée, la session est fermée et le ticket reste inchangé.
+
+#### Observateur — `modele/observateur.py`, `modele/ticket.py`, `modele/systeme_tickets.py`
+
+`ObservateurTickets` est l'interface des observateurs : ses méthodes `ticketModifie`, `ticketAjoute` et `ticketRetire` ne font rien par défaut, et chaque observateur ne redéfinit que celles qui l'intéressent. `SujetTickets` tient la liste des abonnés (`abonner()`, `desabonner()`) et les notifie.
+
+- `Ticket` est un sujet : toutes ses modifications (état, créateur, assigné, commentaire, élément de description) passent par `_signalerModification()`, qui met à jour la date puis notifie ses abonnés. Une transition refusée ne notifie rien.
+- `SystemeTickets` est à la fois sujet et observateur : il s'abonne à chaque ticket ajouté, s'en désabonne au retrait et retransmet ses modifications à ses propres abonnés (relais). Il notifie aussi les ajouts et les retraits de tickets.
+
+Un observateur doit se désabonner quand il disparaît ; sinon, il continue d'être appelé et reste en mémoire. Pour que l'ajout d'un élément de description soit notifié, il faut passer par `ticket.ajouterElementDescription()` et non par `ticket.description.ajouterElement()` ; `CommandeAjouterElement` passe désormais par cette méthode.
 
 ### Démonstration (captures d'écran)
 
@@ -273,13 +316,15 @@ modele/
   enums.py                  Statut, Priorite
   exceptions.py             les cinq exceptions métier
   commentaire.py            Commentaire (dataclass gelée)
+  observateur.py            ObservateurTickets, SujetTickets (patron Observateur)
   ticket.py                 Ticket, contexte de la machine à états
-  systeme_tickets.py        SystemeTickets, dépôt des tickets
-etats/                      EtatTicket et les cinq états concrets
+  systeme_tickets.py        SystemeTickets, dépôt des tickets et annuaire des utilisateurs
+etats/                      EtatTicket, les cinq états concrets et FabriqueEtat
 description/                Description, ElementDescription, sous-classes, fabrique
 acteurs/                    UtilisateurSysteme, User, Admin
 commandes/                  Commande et les six commandes concrètes
 sessions/                   SessionOperations, SessionEdition, SessionCreation, LotAdmin, RapportExecution
+persistance/                DepotJSON, sauvegarde et rechargement en JSON
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 docs/                       diagrammes UML et captures d'écran du README
 tests/                      tests unitaires et test de non-régression de main.py
