@@ -47,6 +47,16 @@ python main.py
 
 Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
 
+### Lancer les tests
+
+Depuis la racine du dépôt :
+
+```bash
+python -m unittest discover -s tests -t .
+```
+
+Le test de non-régression exécute `main.py` et compare sa sortie, dates neutralisées, à `tests/reference_main.txt`. Si la sortie change volontairement, régénérer la référence avec `python tests/test_non_regression.py`.
+
 ### Utiliser le système dans son propre code
 
 Tous les acteurs partagent un même dépôt, `SystemeTickets`, injecté dans leur constructeur :
@@ -115,7 +125,10 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `User` | `createTicket(ticket)` | L'utilisateur devient le créateur du ticket |
 | `User` | `supprimerTicket(ticket)` | Seulement par le créateur, et si le ticket n'a jamais été assigné |
 | `User` | `soumettreValidation(ticket)` | Seulement par l'assigné : `ASSIGNE` → `VALIDATION` |
-| `User` | `ouvrirSessionEdition(ticket)` | Seulement par le créateur ; retourne une `SessionEdition` |
+| `User` | `ouvrirSessionEdition(ticket)` | Seulement par le créateur, et une seule session ouverte par ticket ; retourne une `SessionEdition` |
+| `User` | `ouvrirSessionCreation(ticket)` | Seulement pour un ticket sans créateur et absent du dépôt, et une seule session ouverte par ticket ; retourne une `SessionCreation` |
+| `User` | `sessionEnCours(ticket)` | Session d'édition ou de création encore ouverte sur ce ticket, même en pause ; sinon `None` |
+| `User` | `sessionsOuvertes` | Propriété en lecture seule : sessions d'édition et de création encore ouvertes |
 | `User` | `mesTickets(ids=None)` | Tickets créés par l'utilisateur, filtrables par identifiant |
 | `Admin` | `assignTicket(ticket, user)` | Assignation, réassignation ou rejet d'une validation |
 | `Admin` | `desassignerTicket(ticket)` | `ASSIGNE` → `OUVERT` |
@@ -125,9 +138,15 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `Admin` | `ouvrirLot()` | Retourne un `LotAdmin` |
 | `User`, `Admin` | `viewTicket(ticket)` | Affiche le détail d'un ticket |
 | `SessionEdition` | `ajouterCommentaire(texte)`, `ajouterElement(type, chemin)` | Ajoute une modification en attente ; `type` vaut `"texte"`, `"image"` ou `"video"` |
+| `SessionEdition` | `ajouterTexteSaisi(texte)` | Ajoute en attente un texte tapé, sans fichier ; un texte vide ou blanc est refusé (`ArtefactInvalideException`) |
 | `SessionEdition` | `annulerDerniere()`, `mettreEnPause()`, `reprendre()` | Gestion de la pile de modifications |
+| `SessionEdition` | `abandonner()` | Renonce à toute la session avant application : vide la pile, lève la pause et ferme la session ; permise en pause, refusée si la session est déjà appliquée ou abandonnée |
+| `SessionEdition` | `estOuverte` | Propriété en lecture seule : vraie tant que la session n'est ni appliquée ni abandonnée |
+| `SessionCreation` | mêmes opérations que `SessionEdition` | `appliquer()` vérifie d'abord la session (déjà appliquée, abandonnée, en pause), puis crée le ticket avec `createTicket()` et applique sa description ; un refus ou un abandon laisse le ticket hors du dépôt |
 | `LotAdmin` | `assigner(ticket, user)`, `desassigner(ticket)`, `validerTicket(ticket)`, `fermer(ticket)` | Prépare une opération ; ni pause, ni reprise, ni annulation |
 | `SessionEdition`, `LotAdmin` | `appliquer()` | Exécute les modifications en attente et retourne un `RapportExecution` |
+| `ElementDescription` | `typeArtefact` | Propriété en lecture seule : `"texte"`, `"image"` ou `"video"`, les mêmes valeurs que `FabriqueDescription.creer()` |
+| `DescriptionTexte` | `contenu` | Propriété en lecture seule : texte du fichier, disponible après `traiter()` |
 
 L'Admin ne crée, ne supprime ni n'édite aucun ticket. Chacune de ses opérations demande **la transition d'abord, la donnée ensuite** : un refus ne modifie jamais le ticket.
 
@@ -153,6 +172,8 @@ Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les se
 | Suppression d'un ticket, seulement par son créateur et s'il n'a jamais été assigné | User | N |
 | Consultation : `mesTickets()` avec ou sans filtre, `viewTicket()`, `viewAllTickets()` | User, Admin | B, C, G, Q |
 | Session d'édition : modifications en attente, annulation, pause et reprise, application groupée avec rapport | User | D, E, F, G, H |
+| Session de création : le ticket n'entre dans le dépôt qu'à l'application de sa description | User | — (tests unitaires) |
+| Une seule session ouverte par ticket, de nouveau permise après application ou abandon | User | — (tests unitaires) |
 | Description multimédia (texte, image, vidéo) avec chargement différé de la vidéo | User | D, G |
 | Cycle de vie contrôlé par une machine à états | Admin, User | J, K, O |
 | Réassignation directe et rejet d'une validation | Admin | L |
@@ -178,18 +199,21 @@ Le statut d'un ticket n'est pas stocké : la propriété `status` (en lecture se
 
 #### Template Method — `description/element_description.py`
 
-`ElementDescription.traiter()` (marquée `@typing.final`) fixe l'ordre des étapes : `validerChemin()` → `charger()` → `preparerAffichage()`. Seule `charger()` varie selon le type d'artefact (texte, image, vidéo). `DescriptionVideo` pratique le **chargement différé** : `charger()` ne lit que la taille du fichier, et le contenu n'est lu que par `chargerContenuReel()`.
+`ElementDescription.traiter()` (marquée `@typing.final`) fixe l'ordre des étapes : `validerChemin()` → `charger()` → `preparerAffichage()`. `charger()` varie selon le type d'artefact (texte, image, vidéo) ; faute de fichier, `DescriptionTexteSaisi` (texte tapé par l'utilisateur) redéfinit aussi `validerChemin()`, qui refuse un texte vide, et `preparerAffichage()`, qui affiche le nom « texte saisi ». `DescriptionVideo` pratique le **chargement différé** : `charger()` ne lit que la taille du fichier, et le contenu n'est lu que par `chargerContenuReel()`.
 
 #### Factory Method — `description/fabrique_description.py`
 
-`FabriqueDescription.creer(type_artefact, chemin)` crée l'élément voulu (`"texte"`, `"image"`, `"video"`) sans le charger. C'est le seul endroit du programme qui connaît les sous-classes concrètes ; tout autre type lève `ArtefactInvalideException`.
+`FabriqueDescription.creer(type_artefact, chemin)` crée l'élément voulu (`"texte"`, `"image"`, `"video"`) sans le charger ; tout autre type lève `ArtefactInvalideException`. `FabriqueDescription.creerSaisie(texte)` crée de même, sans le charger, un élément à partir d'un texte tapé par l'utilisateur, sans fichier. La fabrique est le seul endroit du programme qui connaît les sous-classes concrètes.
 
 #### Command — `commandes/`, `sessions/`
 
 Les modifications sont empilées sous forme de commandes dans une session, puis appliquées d'un coup par `appliquer()`, qui retourne un `RapportExecution`. L'application se fait « au mieux » : une commande refusée ne bloque pas les suivantes, et une commande dont le ticket a été retiré du dépôt est refusée avec le motif « ticket retiré du dépôt ».
 
 - `SessionEdition` (côté User) : commentaires et éléments de description ; annulation de la dernière modification, pause et reprise.
+- `SessionCreation` (côté User) : session d'édition d'un nouveau ticket, qui n'existe pour les autres qu'une fois sa description appliquée. `appliquer()` l'enregistre dans le dépôt avec `createTicket()` juste avant d'exécuter les modifications ; un refus ou un abandon le laisse hors du dépôt.
 - `LotAdmin` (côté Admin) : assigner, désassigner, valider, fermer ; ni pause, ni reprise, ni annulation.
+
+Dans une session d'édition, `annulerDerniere()` défait seulement la dernière modification en attente (undo), alors que `abandonner()` renonce à toute la session : la pile est vidée, la session est fermée et le ticket reste inchangé.
 
 ### Démonstration (captures d'écran)
 
@@ -255,9 +279,10 @@ etats/                      EtatTicket et les cinq états concrets
 description/                Description, ElementDescription, sous-classes, fabrique
 acteurs/                    UtilisateurSysteme, User, Admin
 commandes/                  Commande et les six commandes concrètes
-sessions/                   SessionOperations, SessionEdition, LotAdmin, RapportExecution
+sessions/                   SessionOperations, SessionEdition, SessionCreation, LotAdmin, RapportExecution
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 docs/                       diagrammes UML et captures d'écran du README
+tests/                      tests unitaires et test de non-régression de main.py
 ```
 
 ### Conventions de code
