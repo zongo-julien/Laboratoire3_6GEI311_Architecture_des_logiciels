@@ -155,6 +155,8 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `Ticket` | `ajouterElementDescription(element)` | Ajoute un élément à la description, met à jour la date et notifie les observateurs |
 | `Ticket`, `SystemeTickets` | `abonner(observateur)`, `desabonner(observateur)` | Abonne ou désabonne un `ObservateurTickets` ; s'abonner deux fois n'a pas d'effet, et se désabonner sans être abonné ne lève pas d'erreur |
 | `DepotJSON` | `sauvegarder(systeme)`, `charger()`, `existe()` | Écrit tout le système dans un fichier JSON, ou le reconstruit ; voir [Sauvegarder et recharger le système](#sauvegarder-et-recharger-le-système) |
+| `StockageImages` | `copier(chemin)` | Copie une image `.png` ou `.gif` dans `donnees/images/` sous un nom unique et retourne le chemin de la copie (notation POSIX), à passer tel quel à `ajouterElement("image", ...)` ; un fichier introuvable ou un autre format est refusé (`ArtefactInvalideException`) |
+| `StockageImages` | `supprimer(chemin)` | Supprime une copie du dossier de stockage ; sans effet sur un fichier absent ou hors de ce dossier, donc jamais sur une image d'origine |
 
 L'Admin ne crée, ne supprime ni n'édite aucun ticket. Chacune de ses opérations demande **la transition d'abord, la donnée ensuite** : un refus ne modifie jamais le ticket.
 
@@ -325,7 +327,9 @@ description/                Description, ElementDescription, sous-classes, fabri
 acteurs/                    UtilisateurSysteme, User, Admin
 commandes/                  Commande et les six commandes concrètes
 sessions/                   SessionOperations, SessionEdition, SessionCreation, LotAdmin, RapportExecution
-persistance/                DepotJSON, sauvegarde et rechargement en JSON
+persistance/
+  depot_json.py             DepotJSON, sauvegarde et rechargement en JSON
+  stockage_images.py        StockageImages, copie des images jointes dans donnees/images/
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 docs/                       diagrammes UML et captures d'écran du README
 tests/                      tests unitaires et test de non-régression de main.py
