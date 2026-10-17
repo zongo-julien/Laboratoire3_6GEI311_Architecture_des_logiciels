@@ -29,3 +29,11 @@ class SystemeTickets:
     def ticketsDe(self, user: User) -> list[Ticket]:
         """Tickets dont l'utilisateur est le créateur."""
         return [ticket for ticket in self._tickets if ticket.creator is user]
+
+    def ticketsAssignesA(self, user: User) -> list[Ticket]:
+        """Tickets dont l'utilisateur est l'assigné courant.
+
+        Comprend aussi les tickets TERMINE ou FERME : l'assigné y est conservé
+        pour la traçabilité. La vue filtre par statut si nécessaire.
+        """
+        return [ticket for ticket in self._tickets if ticket.assignedUser is user]

@@ -76,9 +76,22 @@ class Ticket:
     def description(self) -> Description:
         return self._description
 
+    @property
+    def transitionsPermises(self) -> frozenset[Statut]:
+        """Statuts accessibles depuis l'état courant (lecture seule, pour les vues)."""
+        return self._etat.transitionsPermises
+
     def updateStatus(self, nouveau_statut: Statut) -> None:
         """Délègue entièrement la décision à l'état courant."""
         self._etat.gererTransition(self, nouveau_statut)
+
+    def transitionPossible(self, nouveau_statut: Statut) -> bool:
+        """Interroge l'état courant sans rien modifier.
+
+        Permet à la vue d'activer ou de griser un bouton sans recopier
+        les règles de la machine à états.
+        """
+        return self._etat.transitionPossible(nouveau_statut)
 
     def setEtat(self, nouvel_etat: EtatTicket) -> None:
         """Réservée aux classes d'état."""
