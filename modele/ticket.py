@@ -7,18 +7,22 @@ from description.description import Description
 from etats.etat_ouvert import EtatOuvert
 from modele.commentaire import Commentaire
 from modele.exceptions import AccesRefuseException
+from modele.observateur import SujetTickets
 
 if TYPE_CHECKING:
     from acteurs.user import User
     from acteurs.utilisateur_systeme import UtilisateurSysteme
+    from description.element_description import ElementDescription
     from etats.etat_ticket import EtatTicket
     from modele.enums import Priorite, Statut
 
 
-class Ticket:
-    """Ticket de support : contexte de la machine à états (patron State)."""
+class Ticket(SujetTickets):
+    """Ticket de support : contexte de la machine à états (patron State)
+    et sujet observable (patron Observateur)."""
 
     def __init__(self, ticketID: int, title: str, priority: Priorite) -> None:
+        super().__init__()
         self._ticketID: int = ticketID
         self._title: str = title
         self._priority: Priorite = priority
@@ -96,7 +100,7 @@ class Ticket:
     def setEtat(self, nouvel_etat: EtatTicket) -> None:
         """Réservée aux classes d'état."""
         self._etat = nouvel_etat
-        self._updateDate = date.today()
+        self._signalerModification()
 
     def definirCreateur(self, user: User) -> None:
         if self._creator is not None:
@@ -104,15 +108,33 @@ class Ticket:
                 f"Le ticket {self._ticketID} a déjà un créateur : {self._creator.name}"
             )
         self._creator = user
+        self._signalerModification()
 
     def assignTo(self, user: User) -> None:
         self._assignedUser = user
         self._aEteAssigne = True
+        self._signalerModification()
 
     def retirerAssignation(self) -> None:
         # _aEteAssigne n'est jamais remis à False : l'historique d'assignation est conservé.
         self._assignedUser = None
+        self._signalerModification()
 
     def addComment(self, texte: str, auteur: UtilisateurSysteme) -> None:
         """Autorisé dans tous les états."""
         self._comments.append(Commentaire(texte, auteur, date.today()))
+        self._signalerModification()
+
+    def ajouterElementDescription(self, element: ElementDescription) -> None:
+        """Ajoute un élément à la description et prévient les observateurs.
+
+        Passer par le ticket plutôt que par ticket.description garantit
+        que la modification est notifiée.
+        """
+        self._description.ajouterElement(element)
+        self._signalerModification()
+
+    def _signalerModification(self) -> None:
+        """Point unique de toute modification : date de mise à jour, puis notification."""
+        self._updateDate = date.today()
+        self._notifierModification(self)
