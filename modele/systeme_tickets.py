@@ -6,6 +6,7 @@ from modele.observateur import ObservateurTickets, SujetTickets
 
 if TYPE_CHECKING:
     from acteurs.user import User
+    from acteurs.utilisateur_systeme import UtilisateurSysteme
     from modele.ticket import Ticket
 
 
@@ -20,6 +21,7 @@ class SystemeTickets(SujetTickets, ObservateurTickets):
     def __init__(self) -> None:
         super().__init__()
         self._tickets: list[Ticket] = []
+        self._utilisateurs: list[UtilisateurSysteme] = []
 
     @property
     def tickets(self) -> list[Ticket]:
@@ -34,6 +36,28 @@ class SystemeTickets(SujetTickets, ObservateurTickets):
         self._tickets.remove(ticket)
         ticket.desabonner(self)
         self._notifierRetrait(ticket)
+
+    @property
+    def utilisateurs(self) -> list[UtilisateurSysteme]:
+        """Annuaire : sert à la connexion (choix de l'utilisateur) et à la sauvegarde."""
+        return list(self._utilisateurs)
+
+    def inscrireUtilisateur(self, utilisateur: UtilisateurSysteme) -> None:
+        """Inscription idempotente ; deux utilisateurs distincts ne partagent pas un identifiant."""
+        existant = self.utilisateurParId(utilisateur.id)
+        if existant is utilisateur:
+            return
+        if existant is not None:
+            raise ValueError(
+                f"Identifiant d'utilisateur déjà utilisé : {utilisateur.id} ({existant.name})"
+            )
+        self._utilisateurs.append(utilisateur)
+
+    def utilisateurParId(self, id: int) -> UtilisateurSysteme | None:
+        for utilisateur in self._utilisateurs:
+            if utilisateur.id == id:
+                return utilisateur
+        return None
 
     def contient(self, ticket: Ticket) -> bool:
         return ticket in self._tickets

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from description.description import Description
 from etats.etat_ouvert import EtatOuvert
+from etats.fabrique_etat import FabriqueEtat
 from modele.commentaire import Commentaire
 from modele.exceptions import AccesRefuseException
 from modele.observateur import SujetTickets
@@ -20,6 +21,40 @@ if TYPE_CHECKING:
 class Ticket(SujetTickets):
     """Ticket de support : contexte de la machine à états (patron State)
     et sujet observable (patron Observateur)."""
+
+    @classmethod
+    def restaurer(
+        cls,
+        *,
+        ticketID: int,
+        title: str,
+        priority: Priorite,
+        status: Statut,
+        creationDate: date,
+        updateDate: date,
+        creator: User | None,
+        assignedUser: User | None,
+        aDejaEteAssigne: bool,
+        comments: list[Commentaire],
+        elements: list[ElementDescription],
+    ) -> Ticket:
+        """Reconstruit un ticket sauvegardé exactement tel qu'il était.
+
+        Restauration privilégiée : le statut sauvegardé a déjà été atteint
+        légalement, donc on ne rejoue pas la machine à états ; et le ticket est
+        neuf, donc aucun observateur n'est à prévenir.
+        """
+        ticket = cls(ticketID, title, priority)
+        ticket._etat = FabriqueEtat.creer(status)
+        ticket._creator = creator
+        ticket._assignedUser = assignedUser
+        ticket._aEteAssigne = aDejaEteAssigne
+        ticket._comments = list(comments)
+        for element in elements:
+            ticket._description.ajouterElement(element)
+        ticket._creationDate = creationDate
+        ticket._updateDate = updateDate
+        return ticket
 
     def __init__(self, ticketID: int, title: str, priority: Priorite) -> None:
         super().__init__()
