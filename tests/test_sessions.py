@@ -220,3 +220,39 @@ class TestUneSessionParTicket(unittest.TestCase):
         self.assertEqual(self._createur.sessionsOuvertes, [edition])
         edition.appliquer()
         self.assertEqual(self._createur.sessionsOuvertes, [])
+
+
+class TestTicketDeLaSession(unittest.TestCase):
+    """session.ticket est le ticket passé à l'ouverture de la session."""
+
+    def setUp(self) -> None:
+        self._systeme: SystemeTickets = SystemeTickets()
+        self._createur: User = User(1, "Abdoul Razack", "abdoul.razack@uqac.ca", self._systeme)
+
+    def testTicketDeLaSessionEdition(self) -> None:
+        ticket = Ticket(1, "Bug de connexion", Priorite.HAUTE)
+        self._createur.createTicket(ticket)
+        session = self._createur.ouvrirSessionEdition(ticket)
+        self.assertIs(session.ticket, ticket)
+
+    def testTicketDeLaSessionCreation(self) -> None:
+        existant = Ticket(1, "Bug de connexion", Priorite.HAUTE)
+        self._createur.createTicket(existant)
+        self._createur.ouvrirSessionEdition(existant)
+        nouveau = Ticket(2, "Nouveau ticket", Priorite.BASSE)
+        creation = self._createur.ouvrirSessionCreation(nouveau)
+        self.assertIs(creation.ticket, nouveau)
+        # Usage visé par l'interface : les brouillons de création sont les sessions
+        # ouvertes dont le ticket n'est pas encore dans le dépôt.
+        brouillons = [
+            s for s in self._createur.sessionsOuvertes if not self._systeme.contient(s.ticket)
+        ]
+        self.assertEqual(brouillons, [creation])
+
+    def testTicketEnLectureSeule(self) -> None:
+        ticket = Ticket(1, "Bug de connexion", Priorite.HAUTE)
+        self._createur.createTicket(ticket)
+        session = self._createur.ouvrirSessionEdition(ticket)
+        with self.assertRaises(AttributeError):
+            session.ticket = Ticket(2, "Autre ticket", Priorite.BASSE)
+        self.assertIs(session.ticket, ticket)

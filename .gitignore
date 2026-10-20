@@ -6,6 +6,10 @@ __pycache__/
 sauvegarde.json
 *.json.tmp
 
+# Images copiées par l'application : locales ; seules les images de démonstration sont versionnées
+donnees/images/*
+!donnees/images/demo_*.png
+
 # Fichiers d'éditeurs et du système
 .vscode/
 .idea/

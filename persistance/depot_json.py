@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from acteurs.admin import Admin
 from acteurs.user import User
-from description.description_texte_saisi import DescriptionTexteSaisi
 from description.fabrique_description import FabriqueDescription
 from modele.commentaire import Commentaire
 from modele.enums import Priorite, Statut
@@ -114,9 +113,11 @@ class DepotJSON:
 
     @staticmethod
     def _elementVersDict(element: ElementDescription) -> dict[str, Any]:
-        # Le texte saisi partage le type "texte" avec le texte issu d'un fichier :
-        # il est distingué ici parce qu'il n'a pas de chemin, mais un contenu.
-        if isinstance(element, DescriptionTexteSaisi):
+        # Le texte saisi partage le type "texte" avec le texte issu d'un fichier ; on le
+        # distingue par ses propriétés publiques, sans isinstance (seule la fabrique connaît
+        # les sous-classes concrètes) : il n'a pas de chemin, car validerChemin() exige un
+        # fichier existant pour tout autre élément. Il est donc sauvegardé par son contenu.
+        if element.typeArtefact == "texte" and not element.chemin:
             return {"type": "texte_saisi", "contenu": element.contenu}
         return {"type": element.typeArtefact, "chemin": element.chemin}
 

@@ -47,6 +47,23 @@ python main.py
 
 Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
 
+### Lancer l'interface
+
+```bash
+python app.py
+```
+
+L'interface graphique utilise tkinter, inclus dans la bibliothèque standard (sous Linux, installer le paquet `python3-tk` s'il manque). Elle peut être lancée depuis n'importe quel dossier : `app.py` se place lui-même à la racine du dépôt.
+
+- **Au démarrage**, l'application charge `donnees/sauvegarde.json` s'il existe, sinon les données de démonstration `donnees/demo.json`. Une sauvegarde illisible est signalée, puis l'application démarre sur la démonstration.
+- **À la fermeture** de la fenêtre de connexion, tout le système est sauvegardé dans `donnees/sauvegarde.json`, que Git ignore. Les sessions d'édition ou de création encore ouvertes ne sont pas sauvegardées : une confirmation le rappelle avant de quitter.
+- Pour **repartir de la démonstration**, supprimer `donnees/sauvegarde.json`.
+- Pour **régénérer la démonstration** (`donnees/demo.json` et ses images `donnees/images/demo_*.png`) avec l'API du modèle :
+
+```bash
+python outils/generer_demo.py
+```
+
 ### Lancer les tests
 
 Depuis la racine du dépôt :
@@ -142,6 +159,7 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `SessionEdition` | `annulerDerniere()`, `mettreEnPause()`, `reprendre()` | Gestion de la pile de modifications |
 | `SessionEdition` | `abandonner()` | Renonce à toute la session avant application : vide la pile, lève la pause et ferme la session ; permise en pause, refusée si la session est déjà appliquée ou abandonnée |
 | `SessionEdition` | `estOuverte` | Propriété en lecture seule : vraie tant que la session n'est ni appliquée ni abandonnée |
+| `SessionEdition` | `ticket` | Propriété en lecture seule : ticket visé par la session (aussi pour `SessionCreation`) |
 | `SessionCreation` | mêmes opérations que `SessionEdition` | `appliquer()` vérifie d'abord la session (déjà appliquée, abandonnée, en pause), puis crée le ticket avec `createTicket()` et applique sa description ; un refus ou un abandon laisse le ticket hors du dépôt |
 | `LotAdmin` | `assigner(ticket, user)`, `desassigner(ticket)`, `validerTicket(ticket)`, `fermer(ticket)` | Prépare une opération ; ni pause, ni reprise, ni annulation |
 | `SessionEdition`, `LotAdmin` | `appliquer()` | Exécute les modifications en attente et retourne un `RapportExecution` |
@@ -154,6 +172,8 @@ Transition invalide : impossible de passer de l'état TERMINE au statut FERME
 | `Ticket` | `ajouterElementDescription(element)` | Ajoute un élément à la description, met à jour la date et notifie les observateurs |
 | `Ticket`, `SystemeTickets` | `abonner(observateur)`, `desabonner(observateur)` | Abonne ou désabonne un `ObservateurTickets` ; s'abonner deux fois n'a pas d'effet, et se désabonner sans être abonné ne lève pas d'erreur |
 | `DepotJSON` | `sauvegarder(systeme)`, `charger()`, `existe()` | Écrit tout le système dans un fichier JSON, ou le reconstruit ; voir [Sauvegarder et recharger le système](#sauvegarder-et-recharger-le-système) |
+| `StockageImages` | `copier(chemin)` | Copie une image `.png` ou `.gif` dans `donnees/images/` sous un nom unique et retourne le chemin de la copie (notation POSIX), à passer tel quel à `ajouterElement("image", ...)` ; un fichier introuvable ou un autre format est refusé (`ArtefactInvalideException`) |
+| `StockageImages` | `supprimer(chemin)` | Supprime une copie du dossier de stockage ; sans effet sur un fichier absent ou hors de ce dossier, donc jamais sur une image d'origine |
 
 L'Admin ne crée, ne supprime ni n'édite aucun ticket. Chacune de ses opérations demande **la transition d'abord, la donnée ensuite** : un refus ne modifie jamais le ticket.
 
@@ -182,13 +202,13 @@ systeme = depot.charger()
 
 La Partie 1 traduit littéralement le diagramme de classes fourni : trois classes, `User`, `Admin` et `Ticket`. Le statut y est une simple chaîne de caractères, sans aucune règle de transition, et l'assigné et les commentaires ne sont pas mémorisés, faute d'attribut prévu dans le diagramme. Le code se trouve dans le [dépôt de la Partie 1](https://github.com/zongo-julien/Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
 
-![Diagramme de classes de la Partie 1](docs/uml_partie1.png)
+![Diagramme de classes de la Partie 1](documents/uml_partie1.png)
 
 ### Partie 2 : diagramme amélioré
 
-Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`docs/diagramme_classes_partie2.drawio`](docs/diagramme_classes_partie2.drawio).
+Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`documents/Lab2_6GEI311_diagramme_classes_partie2.drawio`](documents/Lab2_6GEI311_diagramme_classes_partie2.drawio).
 
-![Diagramme de classes de la Partie 2](docs/uml_partie2.png)
+![Diagramme de classes de la Partie 2](documents/uml_partie2.png)
 
 ### Fonctionnalités implémentées
 
@@ -253,7 +273,7 @@ Dans une session d'édition, `annulerDerniere()` défait seulement la dernière 
 
 `ObservateurTickets` est l'interface des observateurs : ses méthodes `ticketModifie`, `ticketAjoute` et `ticketRetire` ne font rien par défaut, et chaque observateur ne redéfinit que celles qui l'intéressent. `SujetTickets` tient la liste des abonnés (`abonner()`, `desabonner()`) et les notifie.
 
-- `Ticket` est un sujet : toutes ses modifications (état, créateur, assigné, commentaire, élément de description) passent par `_signalerModification()`, qui met à jour la date puis notifie ses abonnés. Une transition refusée ne notifie rien.
+- `Ticket` est un sujet : toutes ses modifications (état, créateur, assigné, commentaire, élément de description) passent par `_signalerModification()`, qui met à jour `updateDate`, désormais à chaque modification du ticket et non plus seulement aux transitions comme au Lab 2, puis notifie ses abonnés. Une transition refusée ne notifie rien.
 - `SystemeTickets` est à la fois sujet et observateur : il s'abonne à chaque ticket ajouté, s'en désabonne au retrait et retransmet ses modifications à ses propres abonnés (relais). Il notifie aussi les ajouts et les retraits de tickets.
 
 Un observateur doit se désabonner quand il disparaît ; sinon, il continue d'être appelé et reste en mémoire. Pour que l'ajout d'un élément de description soit notifié, il faut passer par `ticket.ajouterElementDescription()` et non par `ticket.description.ajouterElement()` ; `CommandeAjouterElement` passe désormais par cette méthode.
@@ -266,37 +286,37 @@ Sortie de `python main.py`, scénario par scénario.
 
 Deux utilisateurs créent quatre tickets, qui démarrent tous à l'état `OUVERT`. `mesTickets()` ne retourne que les tickets de leur créateur, et l'Admin voit l'ensemble du dépôt.
 
-![Scénarios A à C](docs/captures/Output_ABC.png)
+![Scénarios A à C](documents/captures/Output_ABC.png)
 
 #### D à F : session d'édition, annulation, pause et reprise
 
 Les cinq modifications restent en attente : le ticket T1 ne change pas avant `appliquer()`. L'annulation retire la dernière modification, et pendant la pause tout ajout, annulation ou application est refusé.
 
-![Scénarios D à F](docs/captures/Output_DEF.png)
+![Scénarios D à F](documents/captures/Output_DEF.png)
 
 #### G à I : application de la session, session close et accès refusé
 
 `appliquer()` produit un rapport de 5 succès. La vidéo n'est chargée réellement qu'à l'appel de `chargerContenuReel()`. Une session déjà appliquée refuse tout nouvel ajout, et un utilisateur qui n'est pas le créateur ne peut pas ouvrir de session sur le ticket.
 
-![Scénarios G à I](docs/captures/Output_GHI.png)
+![Scénarios G à I](documents/captures/Output_GHI.png)
 
 #### J à M : cycle nominal, refus de transition, réassignation et désassignation
 
 Le cycle `OUVERT` → `ASSIGNE` → `VALIDATION` → `TERMINE` est accepté. Un non-assigné ne peut pas soumettre en validation, et l'Admin ne peut pas valider un ticket qui n'est pas en validation. La réassignation directe, le rejet d'une validation et la désassignation fonctionnent.
 
-![Scénarios J à M](docs/captures/Output_JKLM.png)
+![Scénarios J à M](documents/captures/Output_JKLM.png)
 
 #### N et O : suppression, fermeture et états terminaux
 
 Un ticket jamais assigné peut être supprimé par son créateur, mais pas un ticket déjà assigné ni le ticket d'un autre utilisateur. Une fois `TERMINE` ou `FERME`, un ticket n'accepte plus aucune transition.
 
-![Scénarios N et O](docs/captures/Output_NO.png)
+![Scénarios N et O](documents/captures/Output_NO.png)
 
 #### P et Q : lot administrateur, bilan et protections
 
 Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide deux fois, et ticket retiré du dépôt avant l'application. Écrire directement `T1.status` est refusé, et les méthodes réservées à un autre rôle n'existent tout simplement pas sur l'objet.
 
-![Scénarios P et Q](docs/captures/Output_PQ.png)
+![Scénarios P et Q](documents/captures/Output_PQ.png)
 
 ## Ce que nous avons appris
 
@@ -312,6 +332,7 @@ Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide de
 
 ```
 main.py                     scénarios de démonstration A à Q
+app.py                      point d'entrée de l'interface graphique (tkinter)
 modele/
   enums.py                  Statut, Priorite
   exceptions.py             les cinq exceptions métier
@@ -324,9 +345,21 @@ description/                Description, ElementDescription, sous-classes, fabri
 acteurs/                    UtilisateurSysteme, User, Admin
 commandes/                  Commande et les six commandes concrètes
 sessions/                   SessionOperations, SessionEdition, SessionCreation, LotAdmin, RapportExecution
-persistance/                DepotJSON, sauvegarde et rechargement en JSON
+persistance/
+  depot_json.py             DepotJSON, sauvegarde et rechargement en JSON
+  stockage_images.py        StockageImages, copie des images jointes dans donnees/images/
+ihm/
+  vues/                     FenetreBase et une fenêtre tkinter par écran (F1 à F8)
+  controleurs/              ControleurPrincipal (navigation, données) et contrôleurs sans tkinter
+outils/
+  generer_demo.py           génère donnees/demo.json et ses images avec l'API du modèle
+donnees/
+  demo.json                 données de démonstration (versionnées)
+  images/                   images de la démonstration (demo_*.png) et copies faites par l'application
+  sauvegarde.json           état sauvegardé à la fermeture de l'interface (ignoré par Git)
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
-docs/                       diagrammes UML et captures d'écran du README
+documents/                  diagrammes UML et captures d'écran du README
+  maquettes/                maquettes Figma des fenêtres de l'interface
 tests/                      tests unitaires et test de non-régression de main.py
 ```
 
