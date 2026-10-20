@@ -47,6 +47,23 @@ python main.py
 
 Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
 
+### Lancer l'interface
+
+```bash
+python app.py
+```
+
+L'interface graphique utilise tkinter, inclus dans la bibliothèque standard (sous Linux, installer le paquet `python3-tk` s'il manque). Elle peut être lancée depuis n'importe quel dossier : `app.py` se place lui-même à la racine du dépôt.
+
+- **Au démarrage**, l'application charge `donnees/sauvegarde.json` s'il existe, sinon les données de démonstration `donnees/demo.json`. Une sauvegarde illisible est signalée, puis l'application démarre sur la démonstration.
+- **À la fermeture** de la fenêtre de connexion, tout le système est sauvegardé dans `donnees/sauvegarde.json`, que Git ignore. Les sessions d'édition ou de création encore ouvertes ne sont pas sauvegardées : une confirmation le rappelle avant de quitter.
+- Pour **repartir de la démonstration**, supprimer `donnees/sauvegarde.json`.
+- Pour **régénérer la démonstration** (`donnees/demo.json` et ses images `donnees/images/demo_*.png`) avec l'API du modèle :
+
+```bash
+python outils/generer_demo.py
+```
+
 ### Lancer les tests
 
 Depuis la racine du dépôt :
@@ -315,6 +332,7 @@ Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide de
 
 ```
 main.py                     scénarios de démonstration A à Q
+app.py                      point d'entrée de l'interface graphique (tkinter)
 modele/
   enums.py                  Statut, Priorite
   exceptions.py             les cinq exceptions métier
@@ -330,8 +348,18 @@ sessions/                   SessionOperations, SessionEdition, SessionCreation, 
 persistance/
   depot_json.py             DepotJSON, sauvegarde et rechargement en JSON
   stockage_images.py        StockageImages, copie des images jointes dans donnees/images/
+ihm/
+  vues/                     FenetreBase et une fenêtre tkinter par écran (F1 à F8)
+  controleurs/              ControleurPrincipal (navigation, données) et contrôleurs sans tkinter
+outils/
+  generer_demo.py           génère donnees/demo.json et ses images avec l'API du modèle
+donnees/
+  demo.json                 données de démonstration (versionnées)
+  images/                   images de la démonstration (demo_*.png) et copies faites par l'application
+  sauvegarde.json           état sauvegardé à la fermeture de l'interface (ignoré par Git)
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
 documents/                  diagrammes UML et captures d'écran du README
+  maquettes/                maquettes Figma des fenêtres de l'interface
 tests/                      tests unitaires et test de non-régression de main.py
 ```
 
