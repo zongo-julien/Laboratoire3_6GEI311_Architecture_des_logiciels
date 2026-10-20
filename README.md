@@ -64,6 +64,24 @@ L'interface graphique utilise tkinter, inclus dans la bibliothèque standard (so
 python outils/generer_demo.py
 ```
 
+### Créer et éditer un ticket (F4, F5)
+
+**Parcours.** Depuis la liste d'un utilisateur (F3), « Nouveau ticket » ouvre F4 : on y saisit le titre et la priorité, puis « Continuer » crée le ticket et sa `SessionCreation`, sans toucher au dépôt, et ouvre l'éditeur F5. Dans F5, on tape le texte de la description, on ajoute des images PNG ou GIF et des commentaires, qui restent en attente dans la session. « Créer le ticket » ajoute le texte tapé à la description, applique la session et affiche le rapport (F8) : c'est seulement à ce moment que le ticket entre dans le dépôt et apparaît chez les autres acteurs. Pour un ticket existant, « Éditer » dans F3 ouvre la même fenêtre F5 en mode édition, avec le bouton « Appliquer ».
+
+Chaque session a un seul `ControleurEdition`, qui survit à la fermeture de F5. Il garde le texte tapé pendant une pause et la pile des copies d'images (`StockageImages` copie chaque image dans `donnees/images/`).
+
+**Tactiques d'utilisabilité.**
+
+| Tactique | Dans l'interface |
+|---|---|
+| Annuler une saisie | « Annuler » dans F4 ne crée rien. « Abandonner » dans F5 renonce à toute la session, après confirmation si du texte ou des modifications seraient perdus ; les copies d'images sont supprimées et le ticket reste inchangé (ou n'est pas créé). |
+| Undo de frappe | Dans la zone de texte, Ctrl+Z et Ctrl+Y annulent ou rétablissent la frappe. |
+| Undo de session | « Annuler le dernier ajout » retire la dernière modification en attente (image ou commentaire) ; la copie d'une image retirée est supprimée de `donnees/images/`. |
+| Pause et reprise | « Mettre en pause », ou la fermeture de F5, met la session en pause sans rien perdre. Le brouillon reste dans F3, et le reprendre rouvre F5 avec le texte tapé. |
+| Agrégat | Plusieurs images s'ajoutent en une seule sélection ; les images refusées sont signalées ensemble dans une seule boîte, et les autres sont ajoutées. |
+| Prévention des erreurs | Les boutons sans effet possible sont grisés : « Continuer » sans titre, « Créer le ticket » sans texte ni image, « Appliquer » sans texte ni modification, « Ajouter » sans commentaire, « Annuler le dernier ajout » sans modification en attente. |
+| Retour d'information | F5 affiche le nombre et la liste des modifications en attente ; F8 présente le rapport d'exécution après l'application. |
+
 ### Lancer les tests
 
 Depuis la racine du dépôt :
