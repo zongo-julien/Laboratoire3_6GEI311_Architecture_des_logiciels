@@ -185,13 +185,13 @@ systeme = depot.charger()
 
 La Partie 1 traduit littéralement le diagramme de classes fourni : trois classes, `User`, `Admin` et `Ticket`. Le statut y est une simple chaîne de caractères, sans aucune règle de transition, et l'assigné et les commentaires ne sont pas mémorisés, faute d'attribut prévu dans le diagramme. Le code se trouve dans le [dépôt de la Partie 1](https://github.com/zongo-julien/Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
 
-![Diagramme de classes de la Partie 1](docs/uml_partie1.png)
+![Diagramme de classes de la Partie 1](documents/uml_partie1.png)
 
 ### Partie 2 : diagramme amélioré
 
-Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`docs/diagramme_classes_partie2.drawio`](docs/diagramme_classes_partie2.drawio).
+Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`documents/Lab2_6GEI311_diagramme_classes_partie2.drawio`](documents/Lab2_6GEI311_diagramme_classes_partie2.drawio).
 
-![Diagramme de classes de la Partie 2](docs/uml_partie2.png)
+![Diagramme de classes de la Partie 2](documents/uml_partie2.png)
 
 ### Fonctionnalités implémentées
 
@@ -269,37 +269,37 @@ Sortie de `python main.py`, scénario par scénario.
 
 Deux utilisateurs créent quatre tickets, qui démarrent tous à l'état `OUVERT`. `mesTickets()` ne retourne que les tickets de leur créateur, et l'Admin voit l'ensemble du dépôt.
 
-![Scénarios A à C](docs/captures/Output_ABC.png)
+![Scénarios A à C](documents/captures/Output_ABC.png)
 
 #### D à F : session d'édition, annulation, pause et reprise
 
 Les cinq modifications restent en attente : le ticket T1 ne change pas avant `appliquer()`. L'annulation retire la dernière modification, et pendant la pause tout ajout, annulation ou application est refusé.
 
-![Scénarios D à F](docs/captures/Output_DEF.png)
+![Scénarios D à F](documents/captures/Output_DEF.png)
 
 #### G à I : application de la session, session close et accès refusé
 
 `appliquer()` produit un rapport de 5 succès. La vidéo n'est chargée réellement qu'à l'appel de `chargerContenuReel()`. Une session déjà appliquée refuse tout nouvel ajout, et un utilisateur qui n'est pas le créateur ne peut pas ouvrir de session sur le ticket.
 
-![Scénarios G à I](docs/captures/Output_GHI.png)
+![Scénarios G à I](documents/captures/Output_GHI.png)
 
 #### J à M : cycle nominal, refus de transition, réassignation et désassignation
 
 Le cycle `OUVERT` → `ASSIGNE` → `VALIDATION` → `TERMINE` est accepté. Un non-assigné ne peut pas soumettre en validation, et l'Admin ne peut pas valider un ticket qui n'est pas en validation. La réassignation directe, le rejet d'une validation et la désassignation fonctionnent.
 
-![Scénarios J à M](docs/captures/Output_JKLM.png)
+![Scénarios J à M](documents/captures/Output_JKLM.png)
 
 #### N et O : suppression, fermeture et états terminaux
 
 Un ticket jamais assigné peut être supprimé par son créateur, mais pas un ticket déjà assigné ni le ticket d'un autre utilisateur. Une fois `TERMINE` ou `FERME`, un ticket n'accepte plus aucune transition.
 
-![Scénarios N et O](docs/captures/Output_NO.png)
+![Scénarios N et O](documents/captures/Output_NO.png)
 
 #### P et Q : lot administrateur, bilan et protections
 
 Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide deux fois, et ticket retiré du dépôt avant l'application. Écrire directement `T1.status` est refusé, et les méthodes réservées à un autre rôle n'existent tout simplement pas sur l'objet.
 
-![Scénarios P et Q](docs/captures/Output_PQ.png)
+![Scénarios P et Q](documents/captures/Output_PQ.png)
 
 ## Ce que nous avons appris
 
@@ -331,7 +331,7 @@ persistance/
   depot_json.py             DepotJSON, sauvegarde et rechargement en JSON
   stockage_images.py        StockageImages, copie des images jointes dans donnees/images/
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
-docs/                       diagrammes UML et captures d'écran du README
+documents/                  diagrammes UML et captures d'écran du README
 tests/                      tests unitaires et test de non-régression de main.py
 ```
 
