@@ -82,6 +82,22 @@ Chaque session a un seul `ControleurEdition`, qui survit à la fermeture de F5. 
 | Prévention des erreurs | Les boutons sans effet possible sont grisés : « Continuer » sans titre, « Créer le ticket » sans texte ni image, « Appliquer » sans texte ni modification, « Ajouter » sans commentaire, « Annuler le dernier ajout » sans modification en attente. |
 | Retour d'information | F5 affiche le nombre et la liste des modifications en attente ; F8 présente le rapport d'exécution après l'application. |
 
+### Gérer les tickets en Admin (F2, F7, F8)
+
+**Parcours.** Une session Admin ouvre F2 : tous les tickets du dépôt (numéro, titre, priorité, statut, créateur, assigné), filtrables par statut. On sélectionne un ou plusieurs tickets (Ctrl+clic), puis « Assigner… », « Désassigner », « Valider » ou « Fermer » ouvre F7, qui montre exactement les opérations du lot avant toute modification ; pour « Assigner… », on y choisit d'abord l'utilisateur. « Appliquer » exécute le lot « au mieux » : un refus ne bloque pas les opérations suivantes, et F8 affiche les succès et les refus avec leur motif. « Voir le détail », ou un double-clic, ouvre F6 sur la sélection.
+
+F2 est abonnée au dépôt (patron Observer) : un ticket créé ou modifié par un autre acteur y apparaît aussitôt, sans action de l'Admin, et la sélection est conservée. `ControleurAdmin` ne modifie jamais un ticket directement : il passe par `Admin.ouvrirLot()` et `LotAdmin`. Il n'importe pas tkinter et est testé dans le CI (`tests/test_controleur_admin.py`).
+
+**Tactiques d'utilisabilité.**
+
+| Tactique | Dans l'interface |
+|---|---|
+| Agrégat | Une action s'applique en un seul lot à tous les tickets sélectionnés ; F6 parcourt toute la sélection. |
+| Modèle du système | Un bouton d'action n'est actif que si au moins un ticket sélectionné permet la transition (`transitionPossible()`) : les règles restent dans les états. |
+| Prévention des erreurs | Pour « Fermer », action définitive, F7 affiche un avertissement et met le focus sur « Annuler » : la touche Entrée ne ferme aucun ticket. Pour « Assigner… », aucun utilisateur n'est choisi d'avance et « Appliquer » reste grisé tant qu'il ne l'est pas. |
+| Annuler | « Annuler », ou Échap, ferme F7 sans rien appliquer : le lot préparé est simplement oublié. |
+| Retour d'information | F7 liste les opérations en attente ; F8 donne le bilan, puis chaque succès et chaque refus avec son motif. |
+
 ### Lancer les tests
 
 Depuis la racine du dépôt :
