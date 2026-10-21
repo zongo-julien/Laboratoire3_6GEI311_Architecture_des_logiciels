@@ -98,6 +98,23 @@ F2 est abonnée au dépôt (patron Observer) : un ticket créé ou modifié par 
 | Annuler | « Annuler », ou Échap, ferme F7 sans rien appliquer : le lot préparé est simplement oublié. |
 | Retour d'information | F7 liste les opérations en attente ; F8 donne le bilan, puis chaque succès et chaque refus avec son motif. |
 
+### Mes tickets et détail d'un ticket (F3, F6)
+
+**Parcours.** Une session User ouvre F3, qui ne montre que les tickets qui concernent l'utilisateur, en trois onglets : « Créés par moi », « Assignés à moi » et « Brouillons » (créations mises en pause, dont le ticket n'est pas encore dans le dépôt). La colonne « Édition » indique une session « en pause » ou « en cours ». Depuis F3 : « Nouveau ticket » ouvre F4 ; « Éditer », ou « Reprendre l'édition » pour une session en pause, ouvre F5 ; « Supprimer » retire un ticket jamais assigné, après confirmation ; « Soumettre à validation » fait passer un ticket assigné à l'état VALIDATION. « Voir le détail », ou un double-clic, ouvre F6.
+
+F6 est commune aux deux rôles et ne fait que lire le ticket : statut, priorité, créateur, assigné, dates, puis la description (le texte, et les images PNG ou GIF, réduites au-delà de 400 px de large) et les commentaires. « ‹ Précédent » et « Suivant › » parcourent la sélection reçue de F2, ou l'onglet de F3, sans revenir à la liste.
+
+F3 et F6 sont abonnées au dépôt (patron Observer) : un changement fait par un autre acteur s'affiche aussitôt ; si le ticket affiché dans F6 est retiré, un message l'annonce et F6 passe au suivant, ou se ferme. Les sessions, elles, ne sont pas observables : F3 relit l'état des sessions de l'utilisateur toutes les 500 ms, pour qu'un brouillon mis en pause depuis F5 apparaisse aussitôt. `ControleurUser` passe par `User` (`supprimerTicket()`, `soumettreValidation()`) ; il n'importe pas tkinter et est testé dans le CI (`tests/test_controleur_user.py`).
+
+**Tactiques d'utilisabilité.**
+
+| Tactique | Dans l'interface |
+|---|---|
+| Pause et reprise | Un brouillon apparaît dans l'onglet « Brouillons » ; « Reprendre l'édition » rouvre F5 avec le texte tapé. Le bouton s'appelle « Reprendre l'édition » dès qu'une session est en pause sur le ticket choisi. |
+| Prévention des erreurs | « Supprimer » n'est actif que pour un ticket créé par l'utilisateur et jamais assigné ; « Soumettre à validation » seulement pour un ticket qui lui est assigné et dont l'état le permet ; « Éditer » seulement pour un ticket qu'il a créé. La suppression demande une confirmation, « Non » par défaut. |
+| Agrégat | F6 parcourt plusieurs tickets avec « ‹ Précédent » et « Suivant › » (ou Alt+← et Alt+→), sans revenir à la liste. |
+| Retour d'information | Le nombre de lignes de chaque onglet est affiché dans son titre ; F6 indique « Ticket n sur N ». |
+
 ### Lancer les tests
 
 Depuis la racine du dépôt :
