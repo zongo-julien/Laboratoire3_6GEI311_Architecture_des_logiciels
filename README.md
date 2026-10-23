@@ -15,6 +15,7 @@ La **Partie 1** (implémentation littérale du diagramme de classes initial) est
 3. [Résultats](#résultats)
    - [Partie 1 : diagramme initial](#partie-1--diagramme-initial)
    - [Partie 2 : diagramme amélioré](#partie-2--diagramme-amélioré)
+   - [Laboratoire 3 : diagramme mis à jour](#laboratoire-3--diagramme-mis-à-jour)
    - [Fonctionnalités implémentées](#fonctionnalités-implémentées)
    - [Patrons de conception](#patrons-de-conception)
    - [Démonstration (captures d'écran)](#démonstration-captures-décran)
@@ -260,6 +261,14 @@ La Partie 1 traduit littéralement le diagramme de classes fourni : trois classe
 Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`documents/Lab2_6GEI311_diagramme_classes_partie2.drawio`](documents/Lab2_6GEI311_diagramme_classes_partie2.drawio).
 
 ![Diagramme de classes de la Partie 2](documents/uml_partie2.png)
+
+### Laboratoire 3 : diagramme mis à jour
+
+Le diagramme de classes du Laboratoire 3 reprend celui de la Partie 2 et y intègre ce que le Laboratoire 3 a introduit : le patron Observateur, la session de création, la persistance (`DepotJSON`, `StockageImages`) et le paquet `ihm` de l'interface graphique (MVC). Le fichier source draw.io, [`documents/Lab3_6GEI311_diagramme_classes.drawio`](documents/Lab3_6GEI311_diagramme_classes.drawio), contient cinq pages, aussi exportées en PNG : [modèle](documents/Lab3_uml_1_modele.png), [interface](documents/Lab3_uml_2_interface.png), [instanciations](documents/Lab3_uml_3_instanciations.png), [exceptions](documents/Lab3_uml_4_exceptions.png) et [cycle de vie du ticket](documents/Lab3_uml_5_cycle_de_vie.png).
+
+![Diagramme de classes du Laboratoire 3 : modèle](documents/Lab3_uml_1_modele.png)
+
+![Diagramme de classes du Laboratoire 3 : interface (paquet ihm)](documents/Lab3_uml_2_interface.png)
 
 ### Fonctionnalités implémentées
 
