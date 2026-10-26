@@ -1,54 +1,49 @@
-# Laboratoire 2 : système de gestion de tickets
+# Laboratoire 3 : interface graphique du système de gestion de tickets
 
 Cours **6GEI311 Architecture des logiciels**
 
 **Équipe :** Zongo T Julien, Zongo A Razack
 
-Ce dépôt contient la **Partie 2** du laboratoire : un système de suivi de tickets en Python qui met en œuvre quatre patrons de conception, **State**, **Template Method**, **Factory Method** et **Command**.
+Le Lab 3 donne une interface graphique au système de tickets du Lab 2. Depuis une même connexion, un Admin et plusieurs utilisateurs ouvrent chacun leur fenêtre. Les utilisateurs créent et décrivent leurs tickets, l'Admin les fait avancer dans leur cycle de vie, et chaque liste ouverte se met à jour dès qu'un autre acteur change quelque chose.
 
-La **Partie 1** (implémentation littérale du diagramme de classes initial) est dans un dépôt séparé : [Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1](https://github.com/zongo-julien/zongo-julien-Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1). Ce README présente les résultats des deux parties.
+L'interface est écrite avec tkinter et ttk, sans dépendance externe, selon une architecture MVC posée sur le modèle du Lab 2. Ce modèle garde ses patrons (State, Template Method, Factory Method, Command) et en gagne un, l'Observateur. Le rapport du laboratoire, avec les maquettes Figma et les captures de toutes les fenêtres, est à la racine du dépôt, [`Lab3_6GEI311_Rapport.pdf`](Lab3_6GEI311_Rapport.pdf), avec une copie et sa source Word dans `documents/`.
+
+La Partie 1 du Lab 2 (implémentation littérale du diagramme de classes initial) est dans un dépôt séparé : [Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1](https://github.com/zongo-julien/zongo-julien-Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
 
 ## Sommaire
 
 1. [Installation](#installation)
-2. [Utilisation](#utilisation)
-3. [Résultats](#résultats)
-   - [Partie 1 : diagramme initial](#partie-1--diagramme-initial)
-   - [Partie 2 : diagramme amélioré](#partie-2--diagramme-amélioré)
-   - [Laboratoire 3 : diagramme mis à jour](#laboratoire-3--diagramme-mis-à-jour)
-   - [Fonctionnalités implémentées](#fonctionnalités-implémentées)
-   - [Patrons de conception](#patrons-de-conception)
-   - [Démonstration (captures d'écran)](#démonstration-captures-décran)
-4. [Ce que nous avons appris](#ce-que-nous-avons-appris)
-5. [Structure du code](#structure-du-code)
+2. [Lancer l'interface](#lancer-linterface)
+3. [Les fenêtres](#les-fenêtres)
+   - [Connexion (F1)](#connexion-f1)
+   - [Gérer les tickets en Admin (F2, F7, F8)](#gérer-les-tickets-en-admin-f2-f7-f8)
+   - [Mes tickets et détail d'un ticket (F3, F6)](#mes-tickets-et-détail-dun-ticket-f3-f6)
+   - [Créer et éditer un ticket (F4, F5)](#créer-et-éditer-un-ticket-f4-f5)
+4. [Architecture de l'interface](#architecture-de-linterface)
+   - [Diagramme de classes du Lab 3](#diagramme-de-classes-du-lab-3)
+5. [Lancer les tests](#lancer-les-tests)
+6. [Le modèle](#le-modèle)
+7. [Résultats du Lab 2](#résultats-du-lab-2)
+8. [Ce que nous avons appris](#ce-que-nous-avons-appris)
+9. [Structure du code](#structure-du-code)
 
 ## Installation
 
-**Prérequis :** Python 3.10 ou plus récent et Git. Aucune dépendance externe n'est nécessaire, le projet n'utilise que la bibliothèque standard.
+**Prérequis :** Python 3.10 ou plus récent et Git. Aucune dépendance externe n'est nécessaire : le projet n'utilise que la bibliothèque standard, tkinter compris.
 
 Cloner le dépôt :
 
 ```bash
-git clone https://github.com/zongo-julien/Laboratoire2_6GEI311_Architecture_des_logiciels_Partie2.git
+git clone https://github.com/zongo-julien/Laboratoire3_6GEI311_Architecture_des_logiciels.git
 ```
 
 Se placer à la racine du dépôt :
 
 ```bash
-cd Laboratoire2_6GEI311_Architecture_des_logiciels_Partie2
+cd Laboratoire3_6GEI311_Architecture_des_logiciels
 ```
 
-## Utilisation
-
-### Lancer la démonstration
-
-```bash
-python main.py
-```
-
-Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
-
-### Lancer l'interface
+## Lancer l'interface
 
 ```bash
 python app.py
@@ -65,27 +60,40 @@ L'interface graphique utilise tkinter, inclus dans la bibliothèque standard (so
 python outils/generer_demo.py
 ```
 
-### Créer et éditer un ticket (F4, F5)
+## Les fenêtres
 
-**Parcours.** Depuis la liste d'un utilisateur (F3), « Nouveau ticket » ouvre F4 : on y saisit le titre et la priorité, puis « Continuer » crée le ticket et sa `SessionCreation`, sans toucher au dépôt, et ouvre l'éditeur F5. Dans F5, on tape le texte de la description, on ajoute des images PNG ou GIF et des commentaires, qui restent en attente dans la session. « Créer le ticket » ajoute le texte tapé à la description, applique la session et affiche le rapport (F8) : c'est seulement à ce moment que le ticket entre dans le dépôt et apparaît chez les autres acteurs. Pour un ticket existant, « Éditer » dans F3 ouvre la même fenêtre F5 en mode édition, avec le bouton « Appliquer ».
+L'interface compte huit fenêtres, numérotées comme dans les maquettes Figma de `documents/maquettes/`. Les captures ci-dessous sont celles des fenêtres réelles, sur les données de démonstration ; toutes sont dans `documents/captures_lab3/`.
 
-Chaque session a un seul `ControleurEdition`, qui survit à la fermeture de F5. Il garde le texte tapé pendant une pause et la pile des copies d'images (`StockageImages` copie chaque image dans `donnees/images/`).
+| Fenêtre | Rôle | Vue | Contrôleur |
+|---|---|---|---|
+| F1 Connexion | Choisir l'acteur avec lequel ouvrir une session | `vue_connexion.py` | `ControleurPrincipal` |
+| F2 Liste Admin | Tout le dépôt, filtre par statut, actions en lot | `vue_liste_admin.py` | `ControleurAdmin` |
+| F3 Mes tickets | Tickets créés, tickets assignés et brouillons | `vue_liste_user.py` | `ControleurUser` |
+| F4 Nouveau ticket | Titre et priorité d'un nouveau ticket | `vue_nouveau_ticket.py` | `ControleurPrincipal` |
+| F5 Éditeur de description | Texte, images et commentaires, en création ou en édition | `vue_edition.py` | `ControleurEdition` |
+| F6 Détail d'un ticket | Lecture d'un ticket, commune aux deux rôles | `vue_detail.py` | aucun (lecture seule) |
+| F7 Confirmation du lot | Opérations de l'Admin avant application | `vue_lot.py` | `ControleurAdmin` |
+| F8 Rapport d'exécution | Succès et refus après application | `vue_rapport.py` | aucun (lecture seule) |
 
-**Tactiques d'utilisabilité.**
+### Connexion (F1)
 
-| Tactique | Dans l'interface |
-|---|---|
-| Annuler une saisie | « Annuler » dans F4 ne crée rien. « Abandonner » dans F5 renonce à toute la session, après confirmation si du texte ou des modifications seraient perdus ; les copies d'images sont supprimées et le ticket reste inchangé (ou n'est pas créé). |
-| Undo de frappe | Dans la zone de texte, Ctrl+Z et Ctrl+Y annulent ou rétablissent la frappe. |
-| Undo de session | « Annuler le dernier ajout » retire la dernière modification en attente (image ou commentaire) ; la copie d'une image retirée est supprimée de `donnees/images/`. |
-| Pause et reprise | « Mettre en pause », ou la fermeture de F5, met la session en pause sans rien perdre. Le brouillon reste dans F3, et le reprendre rouvre F5 avec le texte tapé. |
-| Agrégat | Plusieurs images s'ajoutent en une seule sélection ; les images refusées sont signalées ensemble dans une seule boîte, et les autres sont ajoutées. |
-| Prévention des erreurs | Les boutons sans effet possible sont grisés : « Continuer » sans titre, « Créer le ticket » sans texte ni image, « Appliquer » sans texte ni modification, « Ajouter » sans commentaire, « Annuler le dernier ajout » sans modification en attente. |
-| Retour d'information | F5 affiche le nombre et la liste des modifications en attente ; F8 présente le rapport d'exécution après l'application. |
+La connexion liste les acteurs de l'annuaire, nom à gauche et rôle à droite. « Ouvrir la session », un double-clic ou Entrée ouvre F2 pour l'Admin et F3 pour un utilisateur. La connexion reste ouverte : on peut ainsi mettre plusieurs acteurs côte à côte et voir le patron Observateur à l'œuvre. Il n'y a pas de mot de passe, l'authentification sortant du cadre du laboratoire.
+
+Fermer la connexion quitte l'application. S'il reste des sessions d'édition ou de création ouvertes, une confirmation l'annonce, « Non » par défaut, puisque ces sessions ne sont pas sauvegardées.
+
+![F1 Connexion](documents/captures_lab3/F1_connexion.png)
+
+![Confirmation en quittant avec une session ouverte](documents/captures_lab3/F1_quitter.png)
 
 ### Gérer les tickets en Admin (F2, F7, F8)
 
 **Parcours.** Une session Admin ouvre F2 : tous les tickets du dépôt (numéro, titre, priorité, statut, créateur, assigné), filtrables par statut. On sélectionne un ou plusieurs tickets (Ctrl+clic), puis « Assigner… », « Désassigner », « Valider » ou « Fermer » ouvre F7, qui montre exactement les opérations du lot avant toute modification ; pour « Assigner… », on y choisit d'abord l'utilisateur. « Appliquer » exécute le lot « au mieux » : un refus ne bloque pas les opérations suivantes, et F8 affiche les succès et les refus avec leur motif. « Voir le détail », ou un double-clic, ouvre F6 sur la sélection.
+
+![F2 Liste Admin : deux tickets OUVERT sélectionnés](documents/captures_lab3/F2_liste_admin.png)
+
+![F7 pour « Fermer » : avertissement et focus sur « Annuler »](documents/captures_lab3/F7_fermer.png)
+
+![F8 après un lot : deux succès et un refus motivé](documents/captures_lab3/F8_rapport_lot.png)
 
 F2 est abonnée au dépôt (patron Observer) : un ticket créé ou modifié par un autre acteur y apparaît aussitôt, sans action de l'Admin, et la sélection est conservée. `ControleurAdmin` ne modifie jamais un ticket directement : il passe par `Admin.ouvrirLot()` et `LotAdmin`. Il n'importe pas tkinter et est testé dans le CI (`tests/test_controleur_admin.py`).
 
@@ -105,6 +113,10 @@ F2 est abonnée au dépôt (patron Observer) : un ticket créé ou modifié par 
 
 F6 est commune aux deux rôles et ne fait que lire le ticket : statut, priorité, créateur, assigné, dates, puis la description (le texte, et les images PNG ou GIF, réduites au-delà de 400 px de large) et les commentaires. « ‹ Précédent » et « Suivant › » parcourent la sélection reçue de F2, ou l'onglet de F3, sans revenir à la liste.
 
+![F3, onglet « Brouillons » : une création en pause](documents/captures_lab3/F3_brouillons.png)
+
+![F6 : informations, texte et image de la description](documents/captures_lab3/F6_detail.png)
+
 F3 et F6 sont abonnées au dépôt (patron Observer) : un changement fait par un autre acteur s'affiche aussitôt ; si le ticket affiché dans F6 est retiré, un message l'annonce et F6 passe au suivant, ou se ferme. Les sessions, elles, ne sont pas observables : F3 relit l'état des sessions de l'utilisateur toutes les 500 ms, pour qu'un brouillon mis en pause depuis F5 apparaisse aussitôt. `ControleurUser` passe par `User` (`supprimerTicket()`, `soumettreValidation()`) ; il n'importe pas tkinter et est testé dans le CI (`tests/test_controleur_user.py`).
 
 **Tactiques d'utilisabilité.**
@@ -116,7 +128,52 @@ F3 et F6 sont abonnées au dépôt (patron Observer) : un changement fait par un
 | Agrégat | F6 parcourt plusieurs tickets avec « ‹ Précédent » et « Suivant › » (ou Alt+← et Alt+→), sans revenir à la liste. |
 | Retour d'information | Le nombre de lignes de chaque onglet est affiché dans son titre ; F6 indique « Ticket n sur N ». |
 
-### Lancer les tests
+### Créer et éditer un ticket (F4, F5)
+
+**Parcours.** Depuis la liste d'un utilisateur (F3), « Nouveau ticket » ouvre F4 : on y saisit le titre et la priorité, puis « Continuer » crée le ticket et sa `SessionCreation`, sans toucher au dépôt, et ouvre l'éditeur F5. Dans F5, on tape le texte de la description, on ajoute des images PNG ou GIF et des commentaires, qui restent en attente dans la session. « Créer le ticket » ajoute le texte tapé à la description, applique la session et affiche le rapport (F8) : c'est seulement à ce moment que le ticket entre dans le dépôt et apparaît chez les autres acteurs. Pour un ticket existant, « Éditer » dans F3 ouvre la même fenêtre F5 en mode édition, avec le bouton « Appliquer ».
+
+![F4 Nouveau ticket](documents/captures_lab3/F4_nouveau_ticket.png)
+
+![F5 en création : deux images, un commentaire et le texte tapé](documents/captures_lab3/F5_creation.png)
+
+Chaque session a un seul `ControleurEdition`, qui survit à la fermeture de F5. Il garde le texte tapé pendant une pause et la pile des copies d'images (`StockageImages` copie chaque image dans `donnees/images/`).
+
+**Tactiques d'utilisabilité.**
+
+| Tactique | Dans l'interface |
+|---|---|
+| Annuler une saisie | « Annuler » dans F4 ne crée rien. « Abandonner » dans F5 renonce à toute la session, après confirmation si du texte ou des modifications seraient perdus ; les copies d'images sont supprimées et le ticket reste inchangé (ou n'est pas créé). |
+| Undo de frappe | Dans la zone de texte, Ctrl+Z et Ctrl+Y annulent ou rétablissent la frappe. |
+| Undo de session | « Annuler le dernier ajout » retire la dernière modification en attente (image ou commentaire) ; la copie d'une image retirée est supprimée de `donnees/images/`. |
+| Pause et reprise | « Mettre en pause », ou la fermeture de F5, met la session en pause sans rien perdre. Le brouillon reste dans F3, et le reprendre rouvre F5 avec le texte tapé. |
+| Agrégat | Plusieurs images s'ajoutent en une seule sélection ; les images refusées sont signalées ensemble dans une seule boîte, et les autres sont ajoutées. |
+| Prévention des erreurs | Les boutons sans effet possible sont grisés : « Continuer » sans titre, « Créer le ticket » sans texte ni image, « Appliquer » sans texte ni modification, « Ajouter » sans commentaire, « Annuler le dernier ajout » sans modification en attente. |
+| Retour d'information | F5 affiche le nombre et la liste des modifications en attente ; F8 présente le rapport d'exécution après l'application. |
+
+## Architecture de l'interface
+
+| Couche | Paquets | Règle |
+|---|---|---|
+| Modèle | `acteurs`, `modele`, `etats`, `description`, `sessions`, `commandes`, `persistance` | Porte les règles métier ; ne connaît pas tkinter. |
+| Vues | `ihm/vues` | Lisent le modèle par ses propriétés en lecture seule et l'observent ; ne le modifient jamais. |
+| Contrôleurs | `ihm/controleurs` | Font toutes les modifications, en passant par `Admin`, `User`, les sessions ou `LotAdmin` ; jamais par `ticket.updateStatus()`, `setEtat()` ni un attribut privé. |
+
+- Seul `ControleurPrincipal` crée des fenêtres. Il charge et sauvegarde les données, et tient un registre des sessions d'édition : un seul `ControleurEdition` par session, qui survit à la fermeture de F5 et garde le texte tapé pendant une pause.
+- `ControleurAdmin`, `ControleurUser` et `ControleurEdition` n'importent ni tkinter ni les vues. Ils sont donc testés dans le CI, qui n'a pas d'écran, avec un faux contrôleur principal.
+- Chaque fenêtre hérite de `FenetreBase`, qui l'abonne à ses sujets à l'ouverture et l'en désabonne à la fermeture, avant de la détruire. F2, F3 et F6 observent le dépôt, qui relaie les modifications de chacun de ses tickets.
+- `FenetreBase.executer()` affiche les cinq exceptions métier de `modele/exceptions.py` dans une boîte, et la fenêtre reste ouverte. Toute autre exception est un bug et remonte dans la console. En pratique, les boutons qui mèneraient à un refus sont grisés d'avance.
+
+Les constructeurs des vues et les signatures des contrôleurs ont été figés dès la première étape du sprint, avec une ébauche de chaque fenêtre ; ce contrat est détaillé dans le rapport (section 3.2).
+
+### Diagramme de classes du Lab 3
+
+Le diagramme de classes du Laboratoire 3 reprend celui de la Partie 2 et y intègre ce que le Laboratoire 3 a introduit : le patron Observateur, la session de création, la persistance (`DepotJSON`, `StockageImages`) et le paquet `ihm` de l'interface graphique (MVC). Le fichier source draw.io, [`documents/Lab3_6GEI311_diagramme_classes.drawio`](documents/Lab3_6GEI311_diagramme_classes.drawio), contient cinq pages, aussi exportées en PNG : [modèle](documents/Lab3_uml_1_modele.png), [interface](documents/Lab3_uml_2_interface.png), [instanciations](documents/Lab3_uml_3_instanciations.png), [exceptions](documents/Lab3_uml_4_exceptions.png) et [cycle de vie du ticket](documents/Lab3_uml_5_cycle_de_vie.png).
+
+![Diagramme de classes du Laboratoire 3 : modèle](documents/Lab3_uml_1_modele.png)
+
+![Diagramme de classes du Laboratoire 3 : interface (paquet ihm)](documents/Lab3_uml_2_interface.png)
+
+## Lancer les tests
 
 Depuis la racine du dépôt :
 
@@ -124,7 +181,21 @@ Depuis la racine du dépôt :
 python -m unittest discover -s tests -t .
 ```
 
+La suite compte 145 tests, lancés aussi par GitHub Actions à chaque push et à chaque pull request. Aucun ne crée de fenêtre : les contrôleurs de l'interface (`tests/test_controleur_admin.py`, `test_controleur_user.py`, `test_controleur_edition.py`) sont testés avec un faux contrôleur principal, et `tests/test_donnees_demo.py` vérifie que la démonstration se recharge sans avertissement.
+
 Le test de non-régression exécute `main.py` et compare sa sortie, dates neutralisées, à `tests/reference_main.txt`. Si la sortie change volontairement, régénérer la référence avec `python tests/test_non_regression.py`.
+
+## Le modèle
+
+Le modèle vient du Lab 2. Avant d'écrire l'interface, nous l'avons complété : sessions de création, abandon d'une session, transitions consultables, patron Observateur, sauvegarde JSON et copie des images jointes. Le rapport (section 2) explique d'où vient chacun de ces ajouts ; cette section en donne l'usage.
+
+### Lancer la démonstration du Lab 2
+
+```bash
+python main.py
+```
+
+Le programme doit être lancé depuis la racine du dépôt, car les chemins des ressources (`ressources/...`) sont relatifs. Il exécute 17 scénarios, de A à Q, présentés dans la section [Démonstration](#démonstration-captures-décran). Chaque scénario affiche le test effectué (`Test :`) puis son résultat (`Résultat :`). Quand une opération doit être refusée, le programme capture l'exception, affiche son message et vérifie que le ticket est resté inchangé.
 
 ### Utiliser le système dans son propre code
 
@@ -248,51 +319,6 @@ systeme = depot.charger()
 - Un fichier de description introuvable est ignoré et signalé dans `depot.avertissements`. Un fichier de sauvegarde illisible, d'une autre version ou incohérent lève `PersistanceException` ; un fichier absent lève `FileNotFoundError` (voir `depot.existe()`).
 - Les sessions non appliquées ne sont pas sauvegardées.
 
-## Résultats
-
-### Partie 1 : diagramme initial
-
-La Partie 1 traduit littéralement le diagramme de classes fourni : trois classes, `User`, `Admin` et `Ticket`. Le statut y est une simple chaîne de caractères, sans aucune règle de transition, et l'assigné et les commentaires ne sont pas mémorisés, faute d'attribut prévu dans le diagramme. Le code se trouve dans le [dépôt de la Partie 1](https://github.com/zongo-julien/Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
-
-![Diagramme de classes de la Partie 1](documents/uml_partie1.png)
-
-### Partie 2 : diagramme amélioré
-
-Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`documents/Lab2_6GEI311_diagramme_classes_partie2.drawio`](documents/Lab2_6GEI311_diagramme_classes_partie2.drawio).
-
-![Diagramme de classes de la Partie 2](documents/uml_partie2.png)
-
-### Laboratoire 3 : diagramme mis à jour
-
-Le diagramme de classes du Laboratoire 3 reprend celui de la Partie 2 et y intègre ce que le Laboratoire 3 a introduit : le patron Observateur, la session de création, la persistance (`DepotJSON`, `StockageImages`) et le paquet `ihm` de l'interface graphique (MVC). Le fichier source draw.io, [`documents/Lab3_6GEI311_diagramme_classes.drawio`](documents/Lab3_6GEI311_diagramme_classes.drawio), contient cinq pages, aussi exportées en PNG : [modèle](documents/Lab3_uml_1_modele.png), [interface](documents/Lab3_uml_2_interface.png), [instanciations](documents/Lab3_uml_3_instanciations.png), [exceptions](documents/Lab3_uml_4_exceptions.png) et [cycle de vie du ticket](documents/Lab3_uml_5_cycle_de_vie.png).
-
-![Diagramme de classes du Laboratoire 3 : modèle](documents/Lab3_uml_1_modele.png)
-
-![Diagramme de classes du Laboratoire 3 : interface (paquet ihm)](documents/Lab3_uml_2_interface.png)
-
-### Fonctionnalités implémentées
-
-| Fonctionnalité | Acteur | Scénarios |
-|---|---|---|
-| Création de tickets | User | A |
-| Suppression d'un ticket, seulement par son créateur et s'il n'a jamais été assigné | User | N |
-| Consultation : `mesTickets()` avec ou sans filtre, `viewTicket()`, `viewAllTickets()` | User, Admin | B, C, G, Q |
-| Session d'édition : modifications en attente, annulation, pause et reprise, application groupée avec rapport | User | D, E, F, G, H |
-| Session de création : le ticket n'entre dans le dépôt qu'à l'application de sa description | User | — (tests unitaires) |
-| Une seule session ouverte par ticket, de nouveau permise après application ou abandon | User | — (tests unitaires) |
-| Consultation des tickets assignés à un utilisateur | User | — (tests unitaires) |
-| Transitions permises consultables sans modifier le ticket | — | — (tests unitaires) |
-| Notification des observateurs à chaque modification d'un ticket, relayée par le dépôt | — | — (tests unitaires) |
-| Sauvegarde et rechargement du système en JSON | — | — (tests unitaires) |
-| Description multimédia (texte, image, vidéo) avec chargement différé de la vidéo | User | D, G |
-| Cycle de vie contrôlé par une machine à états | Admin, User | J, K, O |
-| Réassignation directe et rejet d'une validation | Admin | L |
-| Désassignation | Admin | M |
-| Fermeture et états terminaux | Admin | O |
-| Lot administrateur appliqué « au mieux » | Admin | P |
-| Contrôles d'accès (créateur, assigné, rôle) | User, Admin | I, K, N, Q |
-| Statut en lecture seule | — | Q |
-
 ### Patrons de conception
 
 #### State — `etats/`, `modele/ticket.py`
@@ -338,6 +364,43 @@ Dans une session d'édition, `annulerDerniere()` défait seulement la dernière 
 
 Un observateur doit se désabonner quand il disparaît ; sinon, il continue d'être appelé et reste en mémoire. Pour que l'ajout d'un élément de description soit notifié, il faut passer par `ticket.ajouterElementDescription()` et non par `ticket.description.ajouterElement()` ; `CommandeAjouterElement` passe désormais par cette méthode.
 
+## Résultats du Lab 2
+
+### Partie 1 : diagramme initial
+
+La Partie 1 traduit littéralement le diagramme de classes fourni : trois classes, `User`, `Admin` et `Ticket`. Le statut y est une simple chaîne de caractères, sans aucune règle de transition, et l'assigné et les commentaires ne sont pas mémorisés, faute d'attribut prévu dans le diagramme. Le code se trouve dans le [dépôt de la Partie 1](https://github.com/zongo-julien/Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
+
+![Diagramme de classes de la Partie 1](documents/uml_partie1.png)
+
+### Partie 2 : diagramme amélioré
+
+Le diagramme de la Partie 2 corrige les défauts de la Partie 1 et ajoute les sessions d'édition, les lots administrateur et les descriptions multimédias. Cliquer sur l'image pour l'agrandir. Le fichier source draw.io est disponible dans [`documents/Lab2_6GEI311_diagramme_classes_partie2.drawio`](documents/Lab2_6GEI311_diagramme_classes_partie2.drawio).
+
+![Diagramme de classes de la Partie 2](documents/uml_partie2.png)
+
+### Fonctionnalités implémentées
+
+| Fonctionnalité | Acteur | Scénarios |
+|---|---|---|
+| Création de tickets | User | A |
+| Suppression d'un ticket, seulement par son créateur et s'il n'a jamais été assigné | User | N |
+| Consultation : `mesTickets()` avec ou sans filtre, `viewTicket()`, `viewAllTickets()` | User, Admin | B, C, G, Q |
+| Session d'édition : modifications en attente, annulation, pause et reprise, application groupée avec rapport | User | D, E, F, G, H |
+| Session de création : le ticket n'entre dans le dépôt qu'à l'application de sa description | User | — (tests unitaires) |
+| Une seule session ouverte par ticket, de nouveau permise après application ou abandon | User | — (tests unitaires) |
+| Consultation des tickets assignés à un utilisateur | User | — (tests unitaires) |
+| Transitions permises consultables sans modifier le ticket | — | — (tests unitaires) |
+| Notification des observateurs à chaque modification d'un ticket, relayée par le dépôt | — | — (tests unitaires) |
+| Sauvegarde et rechargement du système en JSON | — | — (tests unitaires) |
+| Description multimédia (texte, image, vidéo) avec chargement différé de la vidéo | User | D, G |
+| Cycle de vie contrôlé par une machine à états | Admin, User | J, K, O |
+| Réassignation directe et rejet d'une validation | Admin | L |
+| Désassignation | Admin | M |
+| Fermeture et états terminaux | Admin | O |
+| Lot administrateur appliqué « au mieux » | Admin | P |
+| Contrôles d'accès (créateur, assigné, rôle) | User, Admin | I, K, N, Q |
+| Statut en lecture seule | — | Q |
+
 ### Démonstration (captures d'écran)
 
 Sortie de `python main.py`, scénario par scénario.
@@ -380,6 +443,18 @@ Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide de
 
 ## Ce que nous avons appris
 
+### Au Lab 3
+
+**Figer le contrat avant le code.** Dès la première étape du sprint, toutes les fenêtres existaient sous forme d'ébauches, avec leurs constructeurs définitifs. Écrire des fenêtres qui ne faisaient rien ressemblait à du temps perdu ; c'est pourtant ce qui nous a laissés travailler en parallèle, avec quatre pull requests fusionnées sans conflit.
+
+**L'Observateur a un coût de sortie.** S'abonner est facile ; le piège est la fenêtre fermée qui reste abonnée. Le désabonnement, avant la destruction, est devenu une règle de `FenetreBase` plutôt qu'une chose à laquelle chaque vue doit penser. Les sessions, elles, ne notifient rien : F3 relit leur état toutes les 500 ms, un contournement que nous remplacerions avec plus de temps.
+
+**Griser plutôt que refuser.** Le modèle refusait déjà les opérations interdites par des exceptions. Griser les boutons d'avance, en posant au modèle la question qu'il se posera lui-même (`transitionPossible()`), s'est révélé plus clair pour l'utilisateur et plus simple à tester.
+
+**Tester sans écran oblige à bien découper.** Le CI n'a pas d'écran. Cette contrainte nous a forcés à garder tkinter hors des contrôleurs, et c'est elle qui a rendu toute la logique de l'interface testable.
+
+### Au Lab 2
+
 **Voir le défaut avant de le corriger.** En Partie 1, rien n'empêche de passer d'`OUVERT` à `TERMINÉ`. En Partie 2, la même demande lève une exception, et `ticket.status = …` aussi. Avoir écrit la mauvaise version d'abord a rendu chaque critique de la conception initiale facile et vérifiable.
 
 **Le principe ouvert/fermé a ses limites.** Ajouter un état oblige à modifier l'état qui doit y mener, et un nouveau type d'artefact coûte une ligne dans la fabrique. Les patrons ne suppriment pas la modification, ils la ramènent à un endroit qu'on sait retrouver.
@@ -393,6 +468,7 @@ Le lot de quatre opérations donne 1 succès et 3 refus : transition invalide de
 ```
 main.py                     scénarios de démonstration A à Q
 app.py                      point d'entrée de l'interface graphique (tkinter)
+Lab3_6GEI311_Rapport.pdf    rapport du Lab 3 (copie de documents/Lab3_6GEI311_Rapport.pdf)
 modele/
   enums.py                  Statut, Priorite
   exceptions.py             les cinq exceptions métier
@@ -418,8 +494,12 @@ donnees/
   images/                   images de la démonstration (demo_*.png) et copies faites par l'application
   sauvegarde.json           état sauvegardé à la fermeture de l'interface (ignoré par Git)
 ressources/                 artefacts de démonstration (texte, image PNG, vidéo factice)
-documents/                  diagrammes UML et captures d'écran du README
+documents/                  diagrammes UML, documents de sprint et rapports
+  Lab3_6GEI311_Rapport.pdf  rapport du Lab 3 (source : Lab3_6GEI311_Rapport.docx)
+  Lab3_uml_*.png            diagramme de classes du Lab 3 (source : Lab3_6GEI311_diagramme_classes.drawio)
   maquettes/                maquettes Figma des fenêtres de l'interface
+  captures_lab3/            captures des fenêtres réelles, pour le rapport et ce README
+  captures/                 captures de la sortie de main.py (Lab 2)
 tests/                      tests unitaires et test de non-régression de main.py
 ```
 
