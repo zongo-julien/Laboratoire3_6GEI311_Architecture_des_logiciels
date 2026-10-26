@@ -6,7 +6,9 @@ Cours **6GEI311 Architecture des logiciels**
 
 Le Lab 3 donne une interface graphique au système de tickets du Lab 2. Depuis une même connexion, un Admin et plusieurs utilisateurs ouvrent chacun leur fenêtre. Les utilisateurs créent et décrivent leurs tickets, l'Admin les fait avancer dans leur cycle de vie, et chaque liste ouverte se met à jour dès qu'un autre acteur change quelque chose.
 
-L'interface est écrite avec tkinter et ttk, sans dépendance externe, selon une architecture MVC posée sur le modèle du Lab 2. Ce modèle garde ses patrons (State, Template Method, Factory Method, Command) et en gagne un, l'Observateur. Le rapport du laboratoire, avec les maquettes Figma et les captures de toutes les fenêtres, est à la racine du dépôt, [`Lab3_6GEI311_Rapport.pdf`](Lab3_6GEI311_Rapport.pdf), avec une copie et sa source Word dans `documents/`.
+La vidéo de démonstration (scénarios de test de l'application) est jointe à la release [Lab 3 : remise en vidéo demo](https://github.com/zongo-julien/Laboratoire3_6GEI311_Architecture_des_logiciels/releases/download/lab3-remise/Lab3_demo_scenarios.mp4).
+
+L'interface est écrite avec tkinter, sans dépendance externe, selon une architecture MVC posée sur le modèle du Lab 2. Ce modèle garde ses patrons (State, Template Method, Factory Method, Command) et en gagne un, l'Observateur. Le rapport du laboratoire, avec les maquettes Figma et les captures de toutes les fenêtres, est à la racine du dépôt, [`Lab3_6GEI311_Rapport.pdf`](Lab3_6GEI311_Rapport.pdf), avec une copie et sa source Word dans `documents/`.
 
 La Partie 1 du Lab 2 (implémentation littérale du diagramme de classes initial) est dans un dépôt séparé : [Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1](https://github.com/zongo-julien/zongo-julien-Laboratoire2_6GEI311_Architecture_des_logiciels_Partie1).
 
